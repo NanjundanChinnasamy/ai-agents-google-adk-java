@@ -48,10 +48,15 @@ public final class AppConfig {
     public static final String GOOGLE_CLOUD_LOCATION = get("GOOGLE_CLOUD_LOCATION", "us-central1");
     public static final boolean GOOGLE_GENAI_USE_VERTEXAI = getBoolean("GOOGLE_GENAI_USE_VERTEXAI", false);
 
+    // Ollama / OpenAI-Compatible Endpoint
+    public static final String OLLAMA_API_KEY = get("OLLAMA_API_KEY", "");
+    public static final String OLLAMA_BASE_URL = get("OLLAMA_BASE_URL", "https://ollama.com/v1");
+    public static final String OLLAMA_DEFAULT_MODEL = get("OLLAMA_DEFAULT_MODEL", "gemma4:31b");
+
     // Models
     public static final String RESEARCH_MODEL = get("RESEARCH_MODEL", "gemini-2.0-flash");
-    public static final String DRAFT_MODEL = get("DRAFT_MODEL", "gemini-2.0-flash");
-    public static final String ORCHESTRATOR_MODEL = get("ORCHESTRATOR_MODEL", "gemini-2.0-flash");
+    public static final String DRAFT_MODEL = get("DRAFT_MODEL", "gemma4:31b");
+    public static final String ORCHESTRATOR_MODEL = get("ORCHESTRATOR_MODEL", "gemma4:31b");
     public static final String IMAGE_MODEL_ID = get("IMAGE_MODEL_ID", "gemini-3.1-flash-image");
 
     // Server & Execution
@@ -84,6 +89,22 @@ public final class AppConfig {
     public static final boolean useGcs = !GCS_BUCKET_NAME.isBlank() || DRY_RUN;
 
     public static com.google.adk.models.BaseLlm createModel(String modelName) {
+        String effectiveModel = (modelName != null && !modelName.isBlank()) ? modelName : RESEARCH_MODEL;
+
+        // 1. Explicit Gemini model (e.g. for research_agent with GoogleSearchTool)
+        if (effectiveModel.startsWith("gemini-") || effectiveModel.startsWith("google/")) {
+            return createGeminiModel(effectiveModel);
+        }
+
+        // 2. Ollama / OpenAI-compatible endpoint
+        if (!OLLAMA_API_KEY.isBlank() || !effectiveModel.startsWith("gemini-")) {
+            return new com.google.adk.socialspark.models.OllamaOpenAiLlm(effectiveModel, OLLAMA_BASE_URL, OLLAMA_API_KEY);
+        }
+
+        return createGeminiModel(effectiveModel);
+    }
+
+    public static com.google.adk.models.BaseLlm createGeminiModel(String modelName) {
         try {
             if (GOOGLE_GENAI_USE_VERTEXAI) {
                 com.google.genai.Client client = com.google.genai.Client.builder()
