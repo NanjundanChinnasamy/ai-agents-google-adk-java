@@ -178,7 +178,7 @@ The server starts on port `8000` with the following active endpoints:
 ### 3. Connect Next.js Frontend
 In a separate terminal, start the Next.js frontend (e.g. from `ai-devcamp-labs/frontend`):
 ```bash
-cd C:\NCDocs\AG_Experiments\GDG_LondonProject\ai-devcamp-labs\frontend
+cd <LOCAL-SYSTEM-PATH>\ai-devcamp-labs\frontend
 npm run dev
 ```
 Open `http://localhost:3000` to chat with the agent, inspect research, review image drafts, and approve posts.
