@@ -44,7 +44,7 @@ public final class Application {
         // 1. Health probe
         app.get("/healthz", ctx -> {
             ctx.contentType("application/json");
-            ctx.result("{\"status\":\"ok\"}");
+            ctx.result("{\"status\":\"ok\",\"service\":\"social-spark-adk-java\"}");
         });
 
         // 2. Durable post history

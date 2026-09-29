@@ -80,14 +80,18 @@ ai-agents-google-adk-java/
 ├── pom.xml                    # Maven configuration for alternate builds
 ├── settings.gradle.kts        # Project settings
 ├── gradlew.bat / gradlew      # Gradle wrapper scripts
-├── run-backend.bat / .sh      # Fast startup scripts
+├── run-backend.bat / .sh      # Javalin AG-UI server launcher (Port 8000)
+├── run-adk-web.bat / .sh      # Official Google ADK Web Dev UI launcher (Port 8080)
+├── test-agent.bat / .sh       # Direct CLI agent test console
 ├── .env.example               # Environment variables template
 ├── skills/                    # Agent Skills (brand-voice, platform-style, etc.)
 ├── mcp/                       # Local MCP servers (linkedin_server.py)
 └── src/
     ├── main/
     │   ├── java/com/google/adk/socialspark/
-    │   │   ├── Application.java               # Main entrypoint & Javalin web server
+    │   │   ├── Application.java               # Main entrypoint & Javalin web server (Port 8000)
+    │   │   ├── AdkDevUiApplication.java       # Official Google ADK Web Dev UI (Port 8080)
+    │   │   ├── AgentConsoleRunner.java        # Interactive CLI runner & one-shot agent tester
     │   │   ├── config/AppConfig.java          # Environment & model configuration
     │   │   ├── db/
     │   │   │   ├── PostRecord.java            # Post DTO
@@ -120,7 +124,7 @@ ai-agents-google-adk-java/
 - **uv** (recommended for LinkedIn MCP execution) or **Python 3.10+**
 - **Google GenAI API Key** or **Vertex AI Project**:
   - `GOOGLE_API_KEY` / `GEMINI_API_KEY`, OR
-  - `GOOGLE_GENAI_USE_VERTEXAI=TRUE` with `GOOGLE_CLOUD_PROJECT`
+  - `GOOGLE_GENAI_USE_VERTEXAI=TRUE` with `GOOGLE_CLOUD_PROJECT` (e.g. in `us-central1`)
 
 ---
 
@@ -129,17 +133,18 @@ ai-agents-google-adk-java/
 Copy `.env.example` to `.env` and configure your settings:
 
 ```ini
-# Google GenAI / Vertex AI
+# --- Option A: Google AI Studio (API Key) ---
 GEMINI_API_KEY=your-api-key-here
-# OR Vertex AI:
-# GOOGLE_GENAI_USE_VERTEXAI=TRUE
-# GOOGLE_CLOUD_PROJECT=your-gcp-project-id
-# GOOGLE_CLOUD_LOCATION=us-central1
 
-# Models
-RESEARCH_MODEL=gemini-flash-latest
-DRAFT_MODEL=gemini-flash-latest
-ORCHESTRATOR_MODEL=gemini-flash-latest
+# --- Option B: Google Cloud Vertex AI ---
+GOOGLE_GENAI_USE_VERTEXAI=TRUE
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
+
+# Models (ADK GoogleSearchTool requires gemini-2.x or gemini-3.x)
+RESEARCH_MODEL=gemini-2.5-flash
+DRAFT_MODEL=gemini-2.5-flash
+ORCHESTRATOR_MODEL=gemini-2.5-flash
 IMAGE_MODEL_ID=gemini-3.1-flash-image
 
 # Server & Execution
@@ -150,35 +155,132 @@ BACKEND_PUBLIC_ORIGIN=http://localhost:8000
 
 ---
 
-## Build & Run
+## Testing & Execution Methods
 
-### 1. Run Tests
+You can test and run the agents through three different methods depending on your needs:
+
+---
+
+### Method 1: Official Google ADK Developer Web UI (Recommended Visual Tool)
+
+The project includes the official **Google ADK Developer Web UI** powered by `com.google.adk:google-adk-dev`. It provides an interactive DAG visualization of the agent hierarchy, real-time token streaming, tool call inspection, and session management.
+
+#### 1. Start the Dev UI Server
 ```bash
-.\gradlew.bat test       # Windows
-./gradlew test           # macOS/Linux
+# Windows
+.\run-adk-web.bat
+
+# macOS / Linux
+./run-adk-web.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runDevUi --console=plain
 ```
 
-### 2. Start the Server
+#### 2. Open in Your Browser
+Navigate directly to:
+👉 **`http://localhost:8080/dev-ui`**
+
+#### 3. Features & How to Use
+- **Agent Switcher (Top Header)**:
+  - `social_poster`: Test the root multi-agent orchestrator coordinating research, drafting, and MCP publishing.
+  - `draft_agent`: Test the copywriting specialist in isolation with its Agent Skills.
+  - `research_agent`: Test the Google Search grounding specialist.
+- **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`) and registered tools.
+- **Tool Inspection**: Click on any executed tool chip (e.g. `google_search`, `read_skill_content`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
+- **Session Management**: Create new sessions via `+ New Session` or inspect past event steps sequentially (`Event 1 of N`, `Request`, `Response`).
+
+---
+
+### Method 2: Interactive Terminal Console (Fast Direct CLI Testing)
+
+Test the agents directly from your terminal without launching any web browser or frontend.
+
+#### 1. Start the Interactive CLI
 ```bash
-.\run-backend.bat        # Windows
-./run-backend.sh         # macOS/Linux
+# Windows
+.\test-agent.bat
+
+# macOS / Linux
+./test-agent.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runAgent --console=plain -q
 ```
-Or directly with Gradle:
+
+#### 2. Interactive Console Commands
+Once inside the prompt (`User > `):
+- **Chat directly with the Root Agent (`social_poster`)**:
+  ```text
+  User > Write a post about Java 21 Virtual Threads
+  ```
+  Watch the orchestrator delegate to `research_agent`, invoke Google Search, transition stages (`[Stage changed -> RESEARCH]`, `[Stage changed -> DRAFT]`), and stream the finalized post.
+- **Test `draft_agent` in isolation**:
+  ```text
+  User > draft_only Write a tweet about modern Java features
+  ```
+  Bypasses research and runs only the drafting specialist with local skill loading.
+- **Inspect Session State**:
+  ```text
+  User > state
+  ```
+  Prints current in-memory session variables (such as `pipeline_stage`, `post_idea`, `post_draft`).
+- **Exit**:
+  ```text
+  User > exit
+  ```
+
+#### 3. One-Shot Command Execution
+You can also run one-off prompts directly without entering the interactive loop:
 ```bash
+# Test draft agent directly
+.\test-agent.bat "draft_only Write a one-liner about microservices"
+
+# Test full orchestrator
+.\test-agent.bat "Write an announcement about Java 21 release"
+```
+
+---
+
+### Method 3: Full AG-UI Server & CopilotKit Frontend
+
+Run the full production setup with the Javalin backend server and Next.js CopilotKit UI.
+
+#### 1. Start the Java Backend (Port 8000)
+```bash
+# Windows
+.\run-backend.bat
+
+# macOS / Linux
+./run-backend.sh
+
+# Or directly with Gradle:
 .\gradlew.bat run
 ```
 
-The server starts on port `8000` with the following active endpoints:
+Endpoints available on `http://localhost:8000`:
 - `GET /healthz` - Health probe (`{"status": "ok"}`)
 - `GET /api/posts` - Historical post records for `PostGallery.tsx`
 - `POST /agents/state` - AG-UI session state rehydration
 - `POST /api/adk` - AG-UI Server-Sent Events (SSE) execution stream
 - `GET /outputs/{filename}` - Gallery static image preview handler
 
-### 3. Connect Next.js Frontend
+#### 2. Start the Next.js Frontend (Port 3000)
 In a separate terminal, start the Next.js frontend (e.g. from `ai-devcamp-labs/frontend`):
 ```bash
 cd <LOCAL-SYSTEM-PATH>\ai-devcamp-labs\frontend
 npm run dev
 ```
-Open `http://localhost:3000` to chat with the agent, inspect research, review image drafts, and approve posts.
+Open **`http://localhost:3000`** to interact with the full web application.
+
+---
+
+### 4. Running Unit & Integration Tests
+```bash
+# Windows
+.\gradlew.bat test
+
+# macOS / Linux
+./gradlew test
+```
+

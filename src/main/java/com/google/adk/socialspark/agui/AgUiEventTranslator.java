@@ -21,6 +21,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -138,6 +139,7 @@ public class AgUiEventTranslator {
         boolean[] textStarted = new boolean[]{false};
 
         try {
+            ensureSession(runner, "devcamp-user", threadId, session.getState());
             RunConfig runConfig = RunConfig.builder().build();
             Flowable<Event> eventFlow = runner.runAsync(
                     "devcamp-user",
@@ -212,6 +214,17 @@ public class AgUiEventTranslator {
             }
             sendEvent(sseEmitter, new AgUiModels.RunError(t.getMessage() != null ? t.getMessage() : "Execution failure"));
             sendEvent(sseEmitter, new AgUiModels.RunFinished(runId, threadId));
+        }
+    }
+
+    private void ensureSession(Runner runner, String userId, String sessionId, Map<String, Object> state) {
+        try {
+            runner.sessionService()
+                    .getSession(runner.appName(), userId, sessionId, Optional.empty())
+                    .switchIfEmpty(runner.sessionService().createSession(runner.appName(), userId, state != null ? state : Map.of(), sessionId))
+                    .blockingGet();
+        } catch (Exception e) {
+            logger.debug("Session already exists or initialized: {}", e.getMessage());
         }
     }
 }

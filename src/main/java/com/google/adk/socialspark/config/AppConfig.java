@@ -49,9 +49,9 @@ public final class AppConfig {
     public static final boolean GOOGLE_GENAI_USE_VERTEXAI = getBoolean("GOOGLE_GENAI_USE_VERTEXAI", false);
 
     // Models
-    public static final String RESEARCH_MODEL = get("RESEARCH_MODEL", "gemini-flash-latest");
-    public static final String DRAFT_MODEL = get("DRAFT_MODEL", "gemini-flash-latest");
-    public static final String ORCHESTRATOR_MODEL = get("ORCHESTRATOR_MODEL", "gemini-flash-latest");
+    public static final String RESEARCH_MODEL = get("RESEARCH_MODEL", "gemini-2.0-flash");
+    public static final String DRAFT_MODEL = get("DRAFT_MODEL", "gemini-2.0-flash");
+    public static final String ORCHESTRATOR_MODEL = get("ORCHESTRATOR_MODEL", "gemini-2.0-flash");
     public static final String IMAGE_MODEL_ID = get("IMAGE_MODEL_ID", "gemini-3.1-flash-image");
 
     // Server & Execution

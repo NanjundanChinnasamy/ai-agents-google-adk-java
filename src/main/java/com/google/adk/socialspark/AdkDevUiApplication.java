@@ -1,0 +1,31 @@
+package com.google.adk.socialspark;
+
+import com.google.adk.agents.LlmAgent;
+import com.google.adk.socialspark.agents.DraftAgentFactory;
+import com.google.adk.socialspark.agents.ResearchAgentFactory;
+import com.google.adk.socialspark.agents.SocialPosterAgentFactory;
+import com.google.adk.web.AdkWebServer;
+
+/**
+ * Launcher for the official Google ADK Web Developer UI (AdkWebServer).
+ * Opens the interactive DAG graph, event inspector, and streaming chat at http://localhost:8080/dev-ui
+ */
+public final class AdkDevUiApplication {
+
+    public static void main(String[] args) {
+        System.out.println("=========================================================");
+        System.out.println("   Starting Google ADK Official Web Dev UI (Port 8080)   ");
+        System.out.println("   Open in browser: http://localhost:8080/dev-ui          ");
+        System.out.println("=========================================================");
+
+        // Register agents with the Dev UI
+        LlmAgent rootAgent = SocialPosterAgentFactory.createRootAgent();
+        LlmAgent draftAgent = DraftAgentFactory.createDraftAgent();
+        LlmAgent researchAgent = ResearchAgentFactory.createResearchAgent();
+
+        // Boot Spring Boot ADK Web Server with static agent registration
+        AdkWebServer.start(rootAgent, draftAgent, researchAgent);
+    }
+
+    private AdkDevUiApplication() {}
+}

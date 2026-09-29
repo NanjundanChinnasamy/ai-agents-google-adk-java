@@ -9,10 +9,15 @@ import java.util.List;
 public final class ResearchAgentFactory {
 
     public static LlmAgent createResearchAgent() {
+        String modelName = AppConfig.RESEARCH_MODEL;
+        if (modelName == null || (!modelName.startsWith("gemini-2") && !modelName.startsWith("gemini-3"))) {
+            modelName = "gemini-2.5-flash";
+        }
+
         return LlmAgent.builder()
                 .name("research_agent")
                 .description("Researches facts, dates, and context on the web for a post idea.")
-                .model(AppConfig.createModel(AppConfig.RESEARCH_MODEL))
+                .model(AppConfig.createModel(modelName))
                 .instruction("""
                     Research the given topic with google_search and return a
                     concise, factual summary: key facts, dates, numbers, and anything surprising

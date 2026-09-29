@@ -108,12 +108,9 @@ public final class SocialPosterAgentFactory {
             Workflow:
             """ + memoryRouting + """
             1. If the idea needs facts, dates, or context, call research_agent first.
-            2. Call draft_agent to write the post (and generate an image if wanted). It
-               reads the research notes automatically; pass it the idea, target platform,
-               and any user preferences.
-            3. Show the finished draft to the user and ask for approval. If an image
-               was generated, embed it as Markdown on its own line right after the draft
-               text: `![post image]({current_image_display_url?})`. If revisions are
+            2. Call draft_agent to write the text post. It reads the research notes
+               automatically; pass it the idea, target platform, and any user preferences.
+            3. Show the finished draft to the user and ask for approval. If revisions are
                needed, call draft_agent again with the feedback.
             4. ALWAYS get explicit approval before any posting action.
 

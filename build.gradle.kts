@@ -18,9 +18,10 @@ java {
 }
 
 dependencies {
-    // Google ADK Java
+    // Google ADK Java & Official Dev UI
     implementation("com.google.adk:google-adk:1.4.0")
     implementation("com.google.adk:google-adk-a2a:1.4.0")
+    implementation("com.google.adk:google-adk-dev:1.4.0")
 
     // Google GenAI & Cloud Storage
     implementation("com.google.genai:google-genai:1.44.0")
@@ -61,4 +62,19 @@ application {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("runAgent") {
+    group = "application"
+    description = "Run interactive direct CLI tester for the ADK agents"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.socialspark.AgentConsoleRunner")
+    standardInput = System.`in`
+}
+
+tasks.register<JavaExec>("runDevUi") {
+    group = "application"
+    description = "Run the official Google ADK Web Dev UI"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.socialspark.AdkDevUiApplication")
 }
