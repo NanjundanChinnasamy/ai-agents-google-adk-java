@@ -1,0 +1,3 @@
+@echo off
+echo Starting Social Spark Java Backend (Google ADK)...
+call gradlew.bat run

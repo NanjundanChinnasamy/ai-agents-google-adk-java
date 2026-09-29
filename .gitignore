@@ -1,0 +1,14 @@
+.gradle/
+build/
+bin/
+out/
+.idea/
+*.iml
+.vscode/
+.env
+gallery/
+social_spark.db
+social_spark.db-shm
+social_spark.db-wal
+social_spark.log
+scratch/
