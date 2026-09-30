@@ -3,6 +3,8 @@ package com.google.adk.socialspark;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.agents.RunConfig;
 import com.google.adk.events.Event;
+import com.google.adk.finance.v1.FinanceAgentV1Factory;
+import com.google.adk.finance.v2.FinanceAgentV2Factory;
 import com.google.adk.runner.InMemoryRunner;
 import com.google.adk.runner.Runner;
 import com.google.adk.socialspark.agents.DraftAgentFactory;
@@ -44,9 +46,11 @@ public final class AgentConsoleRunner {
 
         System.out.println("Type your prompt below to chat directly with the agent.");
         System.out.println("Commands:");
-        System.out.println("  'exit' or 'quit' : Stop the console");
-        System.out.println("  'state'          : View current agent state variables");
-        System.out.println("  'draft_only <p>' : Test draft_agent in isolation");
+        System.out.println("  'exit' or 'quit'   : Stop the console");
+        System.out.println("  'state'            : View current agent state variables");
+        System.out.println("  'draft_only <p>'   : Test draft_agent in isolation");
+        System.out.println("  'finance_v1 <p>'   : Test finance_agent_v1 directly");
+        System.out.println("  'finance_v2 <p>'   : Test finance_agent_v2 directly");
         System.out.println("--------------------------------------------------\n");
 
         try (Scanner scanner = new Scanner(System.in)) {
@@ -73,6 +77,20 @@ public final class AgentConsoleRunner {
                 String draftPrompt = input.substring("draft_only ".length()).trim();
                 System.out.println("\n[Testing draft_agent directly...]");
                 testDraftAgentDirectly(draftPrompt);
+                continue;
+            }
+
+            if (input.toLowerCase().startsWith("finance_v1 ")) {
+                String financePrompt = input.substring("finance_v1 ".length()).trim();
+                System.out.println("\n[Testing finance_agent_v1 directly...]");
+                testFinanceV1Directly(financePrompt);
+                continue;
+            }
+
+            if (input.toLowerCase().startsWith("finance_v2 ")) {
+                String financePrompt = input.substring("finance_v2 ".length()).trim();
+                System.out.println("\n[Testing finance_agent_v2 directly...]");
+                testFinanceV2Directly(financePrompt);
                 continue;
             }
 
@@ -189,9 +207,91 @@ public final class AgentConsoleRunner {
         }
     }
 
+    public static void testFinanceV1Directly(String prompt) {
+        LlmAgent financeAgent = FinanceAgentV1Factory.createFinanceAgentV1();
+        Runner runner = new InMemoryRunner(financeAgent, FinanceAgentV1Factory.AGENT_NAME);
+        Content userContent = Content.builder()
+                .role("user")
+                .parts(List.of(Part.fromText(prompt)))
+                .build();
+
+        ensureSession(runner, "cli-tester", "finance-v1-cli", Map.of());
+
+        try {
+            Flowable<Event> flow = runner.runAsync(
+                    "cli-tester",
+                    "finance-v1-cli",
+                    userContent,
+                    RunConfig.builder().build(),
+                    new HashMap<>()
+            );
+
+            System.out.print("\nFinance Agent v1 > ");
+            flow.blockingForEach(event -> {
+                if (event.content().isPresent()) {
+                    for (Part p : event.content().get().parts().orElse(List.of())) {
+                        p.text().ifPresent(System.out::print);
+                    }
+                }
+            });
+            System.out.println();
+        } catch (Exception e) {
+            System.err.println("\n[Error running finance_agent_v1]: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void testFinanceV2Directly(String prompt) {
+        LlmAgent financeAgent = FinanceAgentV2Factory.createFinanceAgentV2();
+        Runner runner = new InMemoryRunner(financeAgent, FinanceAgentV2Factory.AGENT_NAME);
+        Content userContent = Content.builder()
+                .role("user")
+                .parts(List.of(Part.fromText(prompt)))
+                .build();
+
+        ensureSession(runner, "cli-tester", "finance-v2-cli", Map.of());
+
+        try {
+            Flowable<Event> flow = runner.runAsync(
+                    "cli-tester",
+                    "finance-v2-cli",
+                    userContent,
+                    RunConfig.builder().build(),
+                    new HashMap<>()
+            );
+
+            System.out.print("\nFinance Agent v2 > ");
+            flow.blockingForEach(event -> {
+                if (event.content().isPresent()) {
+                    for (Part p : event.content().get().parts().orElse(List.of())) {
+                        p.functionCall().ifPresent(fc ->
+                                System.out.println("\n[Tool Call] -> " + fc.name() + "(" + fc.args() + ")")
+                        );
+                        p.functionResponse().ifPresent(fr ->
+                                System.out.println("[Tool Response] <- " + fr.name() + " executed.")
+                        );
+                        p.text().ifPresent(System.out::print);
+                    }
+                }
+            });
+            System.out.println();
+        } catch (Exception e) {
+            System.err.println("\n[Error running finance_agent_v2]: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private static void runTurn(String prompt, Map<String, Object> state, boolean printOutput) {
         if (prompt.toLowerCase().startsWith("draft_only ")) {
             testDraftAgentDirectly(prompt.substring("draft_only ".length()).trim());
+            return;
+        }
+        if (prompt.toLowerCase().startsWith("finance_v1 ")) {
+            testFinanceV1Directly(prompt.substring("finance_v1 ".length()).trim());
+            return;
+        }
+        if (prompt.toLowerCase().startsWith("finance_v2 ")) {
+            testFinanceV2Directly(prompt.substring("finance_v2 ".length()).trim());
             return;
         }
         Runner runner = new InMemoryRunner(SocialPosterAgentFactory.createRootAgent(), "social_poster");

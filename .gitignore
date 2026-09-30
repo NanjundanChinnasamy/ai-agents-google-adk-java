@@ -10,5 +10,6 @@ gallery/
 social_spark.db
 social_spark.db-shm
 social_spark.db-wal
+finance_portfolio.db*
 social_spark.log
 scratch/

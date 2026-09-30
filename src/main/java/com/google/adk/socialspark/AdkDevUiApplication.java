@@ -1,6 +1,8 @@
 package com.google.adk.socialspark;
 
 import com.google.adk.agents.LlmAgent;
+import com.google.adk.finance.v1.FinanceAgentV1Factory;
+import com.google.adk.finance.v2.FinanceAgentV2Factory;
 import com.google.adk.socialspark.agents.DraftAgentFactory;
 import com.google.adk.socialspark.agents.ResearchAgentFactory;
 import com.google.adk.socialspark.agents.SocialPosterAgentFactory;
@@ -22,9 +24,11 @@ public final class AdkDevUiApplication {
         LlmAgent rootAgent = SocialPosterAgentFactory.createRootAgent();
         LlmAgent draftAgent = DraftAgentFactory.createDraftAgent();
         LlmAgent researchAgent = ResearchAgentFactory.createResearchAgent();
+        LlmAgent financeAgentV1 = FinanceAgentV1Factory.createFinanceAgentV1();
+        LlmAgent financeAgentV2 = FinanceAgentV2Factory.createFinanceAgentV2();
 
         // Boot Spring Boot ADK Web Server with static agent registration
-        AdkWebServer.start(rootAgent, draftAgent, researchAgent);
+        AdkWebServer.start(rootAgent, draftAgent, researchAgent, financeAgentV1, financeAgentV2);
     }
 
     private AdkDevUiApplication() {}

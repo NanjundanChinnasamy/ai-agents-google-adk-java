@@ -78,3 +78,19 @@ tasks.register<JavaExec>("runDevUi") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.google.adk.socialspark.AdkDevUiApplication")
 }
+
+tasks.register<JavaExec>("runFinanceV1") {
+    group = "application"
+    description = "Run interactive direct CLI tester for Finance Agent v1"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v1.FinanceConsoleV1")
+    standardInput = System.`in`
+}
+
+tasks.register<JavaExec>("runFinanceV2") {
+    group = "application"
+    description = "Run interactive direct CLI tester for Finance Agent v2"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v2.FinanceConsoleV2")
+    standardInput = System.`in`
+}
