@@ -5,6 +5,7 @@ import com.google.adk.finance.v1.FinanceAgentV1Factory;
 import com.google.adk.finance.v2.FinanceAgentV2Factory;
 import com.google.adk.finance.v3.agents.FinanceAgentV3Factory;
 import com.google.adk.finance.v3.agents.MarketResearchAgentFactory;
+import com.google.adk.finance.v4.FinanceAdvisorAgentV4Factory;
 import com.google.adk.socialspark.agents.DraftAgentFactory;
 import com.google.adk.socialspark.agents.ResearchAgentFactory;
 import com.google.adk.socialspark.agents.SocialPosterAgentFactory;
@@ -30,9 +31,10 @@ public final class AdkDevUiApplication {
         LlmAgent financeAgentV2 = FinanceAgentV2Factory.createFinanceAgentV2();
         LlmAgent financeAgentV3 = FinanceAgentV3Factory.createFinanceAgentV3();
         LlmAgent marketResearchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
+        LlmAgent financeAdvisorAgentV4 = FinanceAdvisorAgentV4Factory.createFinanceAdvisorAgentV4();
 
         // Boot Spring Boot ADK Web Server with static agent registration
-        AdkWebServer.start(rootAgent, draftAgent, researchAgent, financeAgentV1, financeAgentV2, financeAgentV3, marketResearchAgent);
+        AdkWebServer.start(rootAgent, draftAgent, researchAgent, financeAgentV1, financeAgentV2, financeAgentV3, marketResearchAgent, financeAdvisorAgentV4);
     }
 
     private AdkDevUiApplication() {}

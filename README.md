@@ -87,6 +87,10 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Google Search Grounding**: Live factual retrieval for recent company news, quarterly earnings, analyst consensus/targets, corporate disclosures, and macro catalysts.
   - **Deterministic Java Math Tool (`PortfolioMathTool`)**: Offloads arithmetic from LLM to Java for exact calculations: PnL, cost basis, return %, portfolio allocation weights, concentration risk flags (>25%), and technical indicators (SMA).
   - **Grounded Decision-Support Synthesis**: Merges real-time web evidence with exact mathematical metrics, concluding with mandatory regulatory disclaimers.
+- **Week 2 — Version 4 (`finance.v4`)**:
+  - **Dynamic Domain Skills (`SkillToolset` & `LocalSkillSource`)**: Modular on-demand domain capability skills (`skills/finance/`): `finance-fundamentals`, `fundamental-analysis`, `valuation`, `risk-management`, `portfolio-analysis`, and `market-research`.
+  - **Curated Grounding Knowledge (`knowledge/`)**: Project-level domain frameworks (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) accessed via `ProjectKnowledgeTool` (`read_project_knowledge`).
+  - **Three-Tier Knowledge Hierarchy & Grounding Transparency**: Explicitly distinguishes *Project Knowledge* (curated frameworks), *Current Information* (live Google Search via `market_researcher`), and *Analysis & Interpretation* (model reasoning) concluded with mandatory regulatory disclaimers.
 
 ---
 
@@ -104,8 +108,15 @@ ai-agents-google-adk-java/
 ├── test-finance-v1.bat / .sh  # Dedicated CLI runner for Finance Agent v1
 ├── test-finance-v2.bat / .sh  # Dedicated CLI runner for Finance Agent v2
 ├── test-finance-v3.bat / .sh  # Dedicated CLI runner for Finance Agent v3
+├── test-finance-v4.bat / .sh  # Dedicated CLI runner for Finance Advisor v4
 ├── .env.example               # Environment variables template
-├── skills/                    # Agent Skills (brand-voice, platform-style, etc.)
+├── knowledge/                 # Curated finance domain grounding knowledge (glossary, valuation, risk, etc.)
+├── skills/                    # Agent Skills (Social Spark & Finance Domain Skills)
+│   ├── brand-voice/           # Social Spark: Brand tone & British English rules
+│   ├── platform-style/        # Social Spark: LinkedIn vs X platform rules
+│   ├── post-formatter/        # Social Spark: Post structural templates
+│   ├── poster-style/          # Social Spark: Aesthetic rules
+│   └── finance/               # Finance Domain Skills (finance-fundamentals, valuation, risk, etc.)
 ├── mcp/                       # Local MCP servers (linkedin_server.py)
 └── src/
     ├── main/
@@ -146,12 +157,17 @@ ai-agents-google-adk-java/
     │   │       │   ├── FinanceAgentV2Factory.java     # Agent factory with dynamic prompt templates
     │   │       │   └── FinanceConsoleV2.java          # Multi-turn stateful CLI console
     │   │       │
-    │   │       └── v3/                                # Week 2: Java Tools & Grounded Google Search
-    │   │           ├── agents/
-    │   │           │   ├── FinanceAgentV3Factory.java         # Root decision-support agent
-    │   │           │   └── MarketResearchAgentFactory.java    # Isolated GoogleSearchTool agent
-    │   │           ├── PortfolioMathTool.java                 # BaseTool for PnL, allocation & SMA math
-    │   │           └── FinanceConsoleV3.java                  # Interactive search & math CLI console
+    │   │       ├── v3/                                # Week 2: Java Tools & Grounded Google Search
+    │   │       │   ├── agents/
+    │   │       │   │   ├── FinanceAgentV3Factory.java         # Root decision-support agent
+    │   │       │   │   └── MarketResearchAgentFactory.java    # Isolated GoogleSearchTool agent
+    │   │       │   ├── PortfolioMathTool.java                 # BaseTool for PnL, allocation & SMA math
+    │   │       │   └── FinanceConsoleV3.java                  # Interactive search & math CLI console
+    │   │       │
+    │   │       └── v4/                                # Week 2: Skills + Grounding Knowledge
+    │   │           ├── ProjectKnowledgeTool.java              # BaseTool reading curated knowledge markdown
+    │   │           ├── FinanceAdvisorAgentV4Factory.java      # Root advisor factory wiring skills, knowledge & search
+    │   │           └── FinanceConsoleV4.java                  # Interactive skills & knowledge CLI console
     │   │
     │   └── resources/logback.xml                      # Logging configuration
     │
@@ -168,9 +184,11 @@ ai-agents-google-adk-java/
                 │   ├── CustomerPortfolioRepositoryTest.java
                 │   ├── LoadCustomerPortfolioToolTest.java
                 │   └── FinanceV2IntegrationTest.java
-                └── v3/
-                    ├── PortfolioMathToolTest.java
-                    └── FinanceV3IntegrationTest.java
+                ├── v3/
+                │   ├── PortfolioMathToolTest.java
+                │   └── FinanceV3IntegrationTest.java
+                └── v4/
+                    └── FinanceV4IntegrationTest.java
 ```
 
 ---
@@ -246,8 +264,9 @@ Navigate directly to:
   - `finance_agent_v1`: Test the foundational financial analyst for asset allocations, valuation metrics, and macro drivers.
   - `finance_agent_v2`: Test the state-managed portfolio analyst with SQLite holdings persistence and `load_customer_portfolio` tool.
   - `finance_agent_v3`: Test the grounded research and valuation analyst with live `market_researcher` (`GoogleSearchTool.INSTANCE`) web grounding and deterministic `PortfolioMathTool` calculations.
+  - `finance_advisor_v4`: Test the structured advisor combining 6 domain skills (`load_skill`), curated project grounding knowledge (`read_project_knowledge`), and Google Search.
 - **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`, `market_researcher`) and registered tools.
-- **Tool Inspection**: Click on any executed tool chip (e.g. `market_researcher`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
+- **Tool Inspection**: Click on any executed tool chip (e.g. `market_researcher`, `load_skill`, `read_project_knowledge`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
 - **Session Management**: Create new sessions via `+ New Session` or inspect past event steps sequentially (`Event 1 of N`, `Request`, `Response`).
 
 ---
@@ -295,6 +314,11 @@ Once inside the prompt (`User > `):
   User > finance_v3 Search recent news for Reliance and calculate PnL for 2 shares bought at 1000 INR with current price 1300 INR
   ```
   Runs the grounded analyst combining live Google Search news retrieval with deterministic math calculations.
+- **Test `finance_advisor_v4` directly**:
+  ```text
+  User > finance_v4 What is P/E and is Infosys currently considered high?
+  ```
+  Runs the structured advisor combining 6 domain skills, curated project knowledge files, and Google Search.
 - **Inspect Session State**:
   ```text
   User > state
@@ -322,6 +346,9 @@ You can also run one-off prompts directly without entering the interactive loop:
 
 # Test finance agent v3
 .\test-agent.bat "finance_v3 Search recent earnings results for TCS"
+
+# Test finance advisor v4
+.\test-agent.bat "finance_v4 What is concentration risk?"
 ```
 
 ---
@@ -425,6 +452,50 @@ Run the grounded market research and portfolio valuation analyst combining live 
   - `calculate_technical_indicator`: Simple Moving Average (SMA), spread, price change
 - **SQLite Customer Portfolio Ingestion (`LoadCustomerPortfolioTool`)**:
   - Automatically loads and formats holdings directly from SQLite database into session state context.
+
+#### Week 2 — Version 4: Skills + Grounding Knowledge (`finance.v4`)
+Run the structured financial advisor combining on-demand domain skills, curated project grounding knowledge, and Google Search:
+```bash
+# Windows
+.\test-finance-v4.bat
+
+# macOS / Linux
+./test-finance-v4.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV4 --console=plain -q
+
+# One-shot queries:
+.\test-finance-v4.bat "What is P/E?"
+.\test-finance-v4.bat "I am customer 1001. Load my portfolio and evaluate my single-stock concentration risk."
+.\test-finance-v4.bat "What happened to Infosys recently?"
+.\test-finance-v4.bat "What is concentration risk?"
+```
+
+**Key Architectural Distinctions (V3 vs V4):**
+- **V3**: Agent + Google Search + deterministic math tools (`PortfolioMathTool`) + SQLite portfolio loader (`LoadCustomerPortfolioTool`).
+- **V4**: V3 + Domain Skills (`SkillToolset` via `skills/finance/`) + Curated Project Grounding Knowledge (`knowledge/*.md`) + Google Search when current info is required. Fully inherits SQLite customer portfolio context management and deterministic math calculations from previous versions.
+
+**The Three Knowledge Layers:**
+1. **Model Knowledge**: Inherent LLM general concepts (e.g. *"What is a stock?"*).
+2. **Project Grounding Knowledge**: Curated, authoritative frameworks in `knowledge/` (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) read on-demand via `read_project_knowledge`.
+3. **Google Search Grounding**: Live external web information retrieved via `market_researcher` when recent news, earnings results, or market developments are requested.
+
+**The 6 Domain Skills in `skills/finance/`:**
+- `finance-fundamentals`: Core financial terms, equity concepts, and profitability metrics.
+- `fundamental-analysis`: Multi-factor business quality, moat, margin stability, and capital return.
+- `valuation`: Multiple contextualization (enforcing that high P/E != automatically overvalued).
+- `risk-management`: Comprehensive risk taxonomy (market, sector, concentration, liquidity, drawdown).
+- `portfolio-analysis`: Strategic asset allocation, correlation, diversification, and horizon principles.
+- `market-research`: 8-step corporate news, earnings surprise, and guidance revision methodology.
+
+**Grounding Transparency Output Structure:**
+Responses systematically distinguish:
+- `### Executive Summary`: Concise high-level synthesis.
+- `### Project Knowledge`: Authoritative frameworks from curated project files.
+- `### Current Information`: Verifiable real-world facts from Google Search (with cited sources and dates).
+- `### Analysis & Interpretation`: Contextual reasoning without asserting false causation.
+- `### Regulatory Disclaimer`: Mandatory non-advice compliance notice.
 
 ---
 

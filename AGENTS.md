@@ -231,16 +231,60 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 ---
 
-### Week 2 — Version 4: Dynamic Skills & Structured Domain Knowledge (`finance.v4`)
+### Week 2 — Version 4: Skills + Grounding Knowledge (`finance.v4`)
 - **Package**: `com.google.adk.finance.v4`
-- **New Skill Directories**:
-  - `skills/finance/portfolio-audit/SKILL.md`: Guidelines for assessing portfolio concentration and diversification limits.
-  - `skills/finance/scenario-stress/SKILL.md`: Methodologies for modeling rate shocks and recessionary sell-offs.
-  - `skills/finance/report-standards/SKILL.md`: Standard structural format for executive decision-support documents.
-- **ADK Classes Learned**:
-  - `com.google.adk.skills.LocalSkillSource`
-  - `com.google.adk.tools.skills.SkillToolset`
-- **Takeaway**: Externalize financial domain knowledge into markdown skills loaded on demand at runtime.
+- **Core Files**:
+  - [`FinanceAdvisorAgentV4Factory.java`](src/main/java/com/google/adk/finance/v4/FinanceAdvisorAgentV4Factory.java): Builds `finance_advisor_v4` combining `SkillToolset`, `ProjectKnowledgeTool`, `AgentTool(market_researcher)`, `PortfolioMathTool`, and `LoadCustomerPortfolioTool`.
+  - [`ProjectKnowledgeTool.java`](src/main/java/com/google/adk/finance/v4/ProjectKnowledgeTool.java): Custom `BaseTool` executing `read_project_knowledge` against curated Markdown documents in `knowledge/`.
+  - [`FinanceConsoleV4.java`](src/main/java/com/google/adk/finance/v4/FinanceConsoleV4.java): Dedicated interactive CLI runner supporting skill listing, knowledge reading, state inspection, and real-time tool tracking.
+  - [`FinanceV4IntegrationTest.java`](src/test/java/com/google/adk/finance/v4/FinanceV4IntegrationTest.java): Comprehensive test suite covering the 5 canonical learning tests, portfolio ingestion, and tool validations.
+- **The Three Knowledge Layers**:
+  1. **Model Knowledge**: General world knowledge already internal to the LLM (e.g. *"What is a stock?"*).
+  2. **Project Grounding Knowledge**: Curated, authoritative frameworks maintained in `knowledge/` rather than in massive static system prompts:
+     - `knowledge/glossary.md`: Essential terminology (shares, market cap, revenue, EPS, dividends, cash flow, CAGR).
+     - `knowledge/valuation-principles.md`: Multiples framework (P/E, forward P/E, EV/EBITDA, DCF concept, relative valuation).
+     - `knowledge/fundamental-analysis.md`: Operating metrics, margins, ROE, ROCE, cash conversion, and balance sheet quality.
+     - `knowledge/risk-framework.md`: Taxonomy of risks (systematic vs unsystematic, single-stock/sector concentration, liquidity, volatility, drawdown).
+     - `knowledge/portfolio-principles.md`: Asset allocation, correlation ($\rho$), diversification benefits, and investment horizons.
+     - `knowledge/market-research-framework.md`: Structured 8-stage methodology for corporate filings, earnings surprise, and guidance revisions.
+  3. **Google Search Grounding**: Real-time external web information retrieved on-demand via `market_researcher` when recent news, earnings results, or market developments are required.
+- **The 6 Domain Skills in `skills/finance/`**:
+  - `skills/finance/finance-fundamentals/SKILL.md`: Core corporate finance concepts and ratio definitions.
+  - `skills/finance/fundamental-analysis/SKILL.md`: Holistic multi-pillar analysis evaluating revenue, margins, capital return, and moat.
+  - `skills/finance/valuation/SKILL.md`: Contextual interpretation of multiples (enforcing that high P/E does not automatically mean overvalued).
+  - `skills/finance/risk-management/SKILL.md`: Framework for classifying and mitigating investment risks.
+  - `skills/finance/portfolio-analysis/SKILL.md`: Conceptual guidelines for analyzing asset allocation and correlation without ad-hoc math.
+  - `skills/finance/market-research/SKILL.md`: 8-stage investigation process synthesizing corporate announcements, earnings, regulatory news, and analyst commentary.
+- **Conceptual Flow**:
+  ```
+                           USER
+                             │
+                             ▼
+                    Finance Advisor V4
+                             │
+                 ┌───────────┴───────────┐
+                 │                       │
+                 ▼                       ▼
+          Project Skills           Current Information?
+                 │                       │
+                 │                  YES  │
+                 │                       ▼
+                 │                 Google Search
+                 │                 (market_researcher)
+                 │                       │
+                 └───────────┬───────────┘
+                             ▼
+                           Gemini / Ollama
+                             │
+                             ▼
+                      Grounded Response
+  ```
+- **Grounding Transparency Format**: Responses systematically distinguish:
+  - **Executive Summary**: Direct high-level answer.
+  - **Project Knowledge**: Principles grounded in curated project knowledge files.
+  - **Current Information**: Verifiable empirical facts from Google Search (cited with dates and sources).
+  - **Analysis & Interpretation**: Objective reasoning without asserting false causation.
+  - **Regulatory Disclaimer**: Mandatory non-advice compliance notice.
 
 ---
 
@@ -472,6 +516,14 @@ ai-agents-google-adk-java/
 │
 ├── gallery/                                   # Local image staging directory served at /outputs/{file}
 │
+├── knowledge/                                 # Curated finance domain grounding knowledge
+│   ├── glossary.md                            # Financial terms, valuation, profitability & market cap
+│   ├── valuation-principles.md                # Multiples framework, forward P/E, relative valuation
+│   ├── fundamental-analysis.md                # Operating metrics, margins, ROE/ROCE, capital return
+│   ├── risk-framework.md                      # Systematic vs unsystematic, concentration, liquidity
+│   ├── portfolio-principles.md                # Allocation, correlation, diversification, horizon
+│   └── market-research-framework.md           # 8-step corporate news & earnings investigation
+│
 ├── skills/                                    # Dynamic Agent Skills loaded via LocalSkillSource
 │   ├── brand-voice/                           # Social Spark: Brand tone & British English rules
 │   │   └── SKILL.md
@@ -484,13 +536,19 @@ ai-agents-google-adk-java/
 │   │   └── SKILL.md
 │   ├── poster-style/                          # Social Spark: Aesthetic rules
 │   │   └── SKILL.md
-│   └── finance/                               # [NEW] Finance Agent Skills
-│       ├── portfolio-audit/
-│       │   └── SKILL.md                       # Diversification, Sharpe, and concentration thresholds
-│       ├── scenario-stress/
-│       │   └── SKILL.md                       # Macroeconomic scenario rules (rate shocks, recessions)
-│       └── report-standards/
-│           └── SKILL.md                       # Decision-support report formatting guidelines
+│   └── finance/                               # Finance Agent Skills (Week 2 — Version 4)
+│       ├── finance-fundamentals/
+│       │   └── SKILL.md                       # Core financial concepts, ratios, and terms
+│       ├── fundamental-analysis/
+│       │   └── SKILL.md                       # Multi-factor business quality, moat, and margins
+│       ├── valuation/
+│       │   └── SKILL.md                       # Multiple contextualization (high P/E != overvalued)
+│       ├── risk-management/
+│       │   └── SKILL.md                       # Risk taxonomy and mitigation strategies
+│       ├── portfolio-analysis/
+│       │   └── SKILL.md                       # Asset allocation and correlation principles
+│       └── market-research/
+│           └── SKILL.md                       # 8-step investigation methodology with Google Search
 │
 ├── mcp/                                       # Model Context Protocol server definitions
 │   ├── README.md                              # MCP server setup guide
@@ -554,8 +612,10 @@ ai-agents-google-adk-java/
     │   │       │   ├── PortfolioMathTool.java               # Deterministic arithmetic BaseTool
     │   │       │   └── FinanceConsoleV3.java                # Dedicated interactive CLI
     │   │       │
-    │   │       ├── v4/                            # Week 2: Dynamic Skills & Domain Playbooks
-    │   │       │   └── FinanceAgentV4Factory.java
+    │   │       ├── v4/                            # Week 2: Skills + Grounding Knowledge
+    │   │       │   ├── FinanceAdvisorAgentV4Factory.java # Root Advisor wired with Skills, Knowledge, & Search
+    │   │       │   ├── ProjectKnowledgeTool.java         # BaseTool reading curated Markdown in knowledge/
+    │   │       │   └── FinanceConsoleV4.java             # Interactive CLI with skills & knowledge introspection
     │   │       │
     │   │       ├── v5/                            # Week 3: Market Context Protocol (MCP) Integration
     │   │       │   ├── MarketMcpToolsetFactory.java
@@ -590,11 +650,18 @@ ai-agents-google-adk-java/
             │   ├── tools/CheckTextLengthToolTest.java
             │   └── tools/UseProvidedImageUrlToolTest.java
             │
-            └── finance/                       # [NEW] Finance Agent Test Suite
-                ├── PortfolioMathToolTest.java # Deterministic calculation validation
-                ├── v1/FinanceV1IntegrationTest.java
-                ├── v3/FinanceV3ToolTest.java
-                └── eval/FinanceReportEvalTest.java # LLM-as-a-judge fidelity scoring
+            └── finance/                       # Finance Agent Test Suite
+                ├── v1/
+                │   └── FinanceV1IntegrationTest.java
+                ├── v2/
+                │   ├── CustomerPortfolioRepositoryTest.java
+                │   ├── LoadCustomerPortfolioToolTest.java
+                │   └── FinanceV2IntegrationTest.java
+                ├── v3/
+                │   ├── PortfolioMathToolTest.java
+                │   └── FinanceV3IntegrationTest.java
+                └── v4/
+                    └── FinanceV4IntegrationTest.java
 ```
 
 ---
@@ -616,6 +683,8 @@ The application provides three complementary ways to run and test both Social Sp
   - `research_agent`: Isolated Google Search research specialist.
   - `finance_agent_v1`: Baseline portfolio analyst for conversational inquiries.
   - `finance_agent_v2`: State-managed portfolio analyst with SQLite holdings persistence.
+  - `finance_agent_v3`: Grounded research and valuation analyst with Google Search and math tools.
+  - `finance_advisor_v4`: Structured advisor with 6 domain skills, curated project knowledge, and Google Search.
 
 ### Mode 2: Interactive Terminal Console
 - **Class**: [`AgentConsoleRunner.java`](src/main/java/com/google/adk/socialspark/AgentConsoleRunner.java)
@@ -628,8 +697,10 @@ The application provides three complementary ways to run and test both Social Sp
   - Isolated drafting test: `draft_only Write a tip on record patterns`.
   - Finance Agent v1 test: `finance_v1 Explain growth vs value investing`.
   - Finance Agent v2 test: `finance_v2 Can you review my portfolio?`.
+  - Finance Agent v3 test: `finance_v3 Search recent earnings results for TCS`.
+  - Finance Advisor v4 test: `finance_v4 What is P/E and is Infosys currently considered high?`.
   - Inspect state variables: `state`.
-  - One-shot execution: `.\test-agent.bat "finance_v2 Review my portfolio"`.
+  - One-shot execution: `.\test-agent.bat "finance_v4 What is concentration risk?"`.
 
 ### Mode 3: Javalin AG-UI Web Server
 - **Class**: [`Application.java`](src/main/java/com/google/adk/socialspark/Application.java)
@@ -652,6 +723,10 @@ The application provides three complementary ways to run and test both Social Sp
   - Class: [`FinanceConsoleV3.java`](src/main/java/com/google/adk/finance/v3/FinanceConsoleV3.java)
   - Launcher: `.\test-finance-v3.bat` (or Gradle: `.\gradlew.bat runFinanceV3 --console=plain -q`)
   - Features: Real-time Google Search grounding for earnings and analyst ratings, deterministic arithmetic via `PortfolioMathTool`, and portfolio database integration.
+- **Finance Advisor v4 Console (Skills + Grounding Knowledge)**:
+  - Class: [`FinanceConsoleV4.java`](src/main/java/com/google/adk/finance/v4/FinanceConsoleV4.java)
+  - Launcher: `.\test-finance-v4.bat` (or Gradle: `.\gradlew.bat runFinanceV4 --console=plain -q`)
+  - Features: 6 domain skills in `skills/finance/`, 6 curated grounding documents in `knowledge/`, Google Search grounding via `market_researcher`, and explicit source transparency.
 
 ---
 
