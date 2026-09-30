@@ -74,7 +74,7 @@ public class FinanceV4IntegrationTest {
         assertThat(agent.description()).contains("curated project grounding knowledge");
         assertThat(agent.instruction().toString()).contains("Finance Advisor v4");
         assertThat(agent.instruction().toString()).contains("read_project_knowledge");
-        assertThat(agent.instruction().toString()).contains("market_researcher");
+        assertThat(agent.instruction().toString()).contains("stockmarket_researcher");
         assertThat(agent.instruction().toString()).contains("Project Knowledge");
         assertThat(agent.instruction().toString()).contains("Current Information");
         assertThat(agent.instruction().toString()).contains("Disclaimer");
@@ -83,8 +83,8 @@ public class FinanceV4IntegrationTest {
         assertThat(tools).isNotEmpty();
         // Should contain ProjectKnowledgeTool
         assertThat(tools).anyMatch(t -> t instanceof ProjectKnowledgeTool);
-        // Should contain market_researcher AgentTool
-        assertThat(tools).anyMatch(t -> t.name().equals("market_researcher"));
+        // Should contain stockmarket_researcher AgentTool
+        assertThat(tools).anyMatch(t -> t.name().equals("stockmarket_researcher"));
         // Should contain SkillToolset tools (load_skill, list_skills)
         assertThat(tools).anyMatch(t -> t.name().equals("load_skill") || t.name().equals("list_skills"));
         // Should contain PortfolioMathTool from V3

@@ -75,7 +75,10 @@ tasks.register<JavaExec>("runAgent") {
 tasks.register<JavaExec>("runDevUi") {
     group = "application"
     description = "Run the official Google ADK Web Dev UI"
-    classpath = sourceSets["main"].runtimeClasspath
+    // Exclude Jetty and Javalin jars to avoid Servlet 5 vs Servlet 6 collision with Tomcat 11
+    classpath = sourceSets["main"].runtimeClasspath.filter { file ->
+        !file.name.contains("jetty") && !file.name.contains("javalin")
+    }
     mainClass.set("com.google.adk.socialspark.AdkDevUiApplication")
 }
 
@@ -109,4 +112,42 @@ tasks.register<JavaExec>("runFinanceV4") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.google.adk.finance.v4.FinanceConsoleV4")
     standardInput = System.`in`
+}
+
+tasks.register<JavaExec>("runFinanceV5") {
+    group = "application"
+    description = "Run interactive direct CLI tester for Finance Advisor v5 (Yahoo Finance MCP + Search + Skills)"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v5.FinanceConsoleV5")
+    standardInput = System.`in`
+}
+
+tasks.register<JavaExec>("runYahooFinanceMcp") {
+    group = "application"
+    description = "Run Yahoo Finance MCP Server over stdio transport"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.mcp.yahoofinance.YahooFinanceMcpServer")
+    standardInput = System.`in`
+}
+
+tasks.register<Jar>("buildYahooFinanceMcpJar") {
+    group = "build"
+    description = "Packages the Yahoo Finance MCP Server into a self-contained executable JAR in mcp/"
+    archiveFileName.set("yahoo-finance-mcp.jar")
+    destinationDirectory.set(file("mcp"))
+    isZip64 = true
+    manifest {
+        attributes["Main-Class"] = "com.google.adk.mcp.yahoofinance.YahooFinanceMcpServer"
+    }
+    from(sourceSets["main"].output)
+    dependsOn(configurations.runtimeClasspath)
+    val mcpDependencies = listOf("mcp", "jackson", "reactor", "reactive", "slf4j", "logback", "json-schema", "itu", "snakeyaml")
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { jar -> jar.name.endsWith(".jar") && mcpDependencies.any { jar.name.contains(it, ignoreCase = true) } }
+            .map { zipTree(it) }
+    }) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    }
 }

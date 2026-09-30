@@ -51,16 +51,16 @@ public final class FinanceAdvisorAgentV4Factory {
             1. Clearly Distinguish Knowledge Sources:
                - General Model Knowledge: General concepts (e.g. "What is a stock?").
                - Project Grounding Knowledge: When discussing investment terminology, valuation principles, fundamental metrics, risk taxonomies, or portfolio concepts, consult your curated project resources using `read_project_knowledge` or load domain skills via `load_skill`.
-               - Current Web Information: When a question requires recent, live, or changing information (e.g., current stock prices, recent earnings, recent announcements, this week's news), invoke `market_researcher` to retrieve fresh Google Search evidence.
+               - Current Web Information: When a question requires recent, live, or changing information (e.g., current stock prices, recent earnings, recent announcements, this week's news), invoke `stockmarket_researcher` to retrieve fresh Google Search evidence.
             2. Customer Portfolio Ingestion & State Management:
                - If the user asks about their portfolio or provides a Customer ID (e.g. test customers 1001 or 1002), call `load_customer_portfolio` to fetch their active positions from SQLite.
                - Once loaded, answer questions about holdings, company names, quantities, and buy prices using the session state context without re-querying SQLite.
-               - Leverage domain skills (`portfolio-analysis`, `risk-management`, `valuation`), deterministic math tools (`portfolio_math`), or live news retrieval (`market_researcher`) to evaluate the customer's active positions.
+               - Leverage domain skills (`portfolio-analysis`, `risk-management`, `valuation`), deterministic math tools (`portfolio_math`), or live news retrieval (`stockmarket_researcher`) to evaluate the customer's active positions.
             3. Deterministic Arithmetic (Portfolio Math Tool):
                - For exact calculations (PnL, cost basis, return %, allocation weights, technical indicators), invoke `portfolio_math`.
             4. Source Priority:
                - For general concepts: Project Grounding Knowledge > Model Knowledge.
-               - For current events: Current Google Search (`market_researcher`) > Project Knowledge (for framework interpretation) > Model Knowledge.
+               - For current events: Current Google Search (`stockmarket_researcher`) > Project Knowledge (for framework interpretation) > Model Knowledge.
                - Never use project knowledge to assert a current empirical price or quarterly statistic.
             5. Grounding Transparency Structure:
                Where practical, organize your response with the following sections:
@@ -78,7 +78,7 @@ public final class FinanceAdvisorAgentV4Factory {
 
     /**
      * Creates an instance of Finance Advisor v4 wired with SkillToolset, ProjectKnowledgeTool,
-     * market_researcher, PortfolioMathTool, and LoadCustomerPortfolioTool.
+     * stockmarket_researcher, PortfolioMathTool, and LoadCustomerPortfolioTool.
      */
     public static LlmAgent createFinanceAdvisorAgentV4() {
         String rootModelName = AppConfig.get("FINANCE_MODEL", AppConfig.ORCHESTRATOR_MODEL);

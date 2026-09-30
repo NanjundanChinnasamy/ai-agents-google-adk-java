@@ -18,9 +18,9 @@ public class FinanceV1IntegrationTest {
         LlmAgent agent = FinanceAgentV1Factory.createFinanceAgentV1();
 
         assertThat(agent).isNotNull();
-        assertThat(agent.name()).isEqualTo("finance_agent_v1");
+        assertThat(agent.name()).isEqualTo("finance_advisor_v1");
         assertThat(agent.description()).contains("financial analyst");
-        assertThat(agent.instruction().toString()).contains("FinanceAgent v1");
+        assertThat(agent.instruction().toString()).contains("Finance Advisor v1");
         assertThat(agent.instruction().toString()).contains("Asset Classes");
         assertThat(agent.instruction().toString()).contains("Disclaimer");
         assertThat(agent.model()).isNotNull();

@@ -21,10 +21,10 @@ import java.util.List;
 public final class FinanceAgentV2Factory {
     private static final Logger logger = LoggerFactory.getLogger(FinanceAgentV2Factory.class);
 
-    public static final String AGENT_NAME = "finance_agent_v2";
+    public static final String AGENT_NAME = "finance_advisor_v2";
 
     public static final String INSTRUCTION = """
-            You are FinanceAgent v2, an institutional financial analyst and portfolio assistant specializing in Context & Holdings State Management.
+            You are Finance Advisor v2, an institutional financial analyst and portfolio assistant specializing in Context & Holdings State Management.
             Your role is to assist investors by analyzing their portfolio holdings, calculating investment metrics, explaining asset allocations, and answering questions using session state memory.
 
             Current Session State:

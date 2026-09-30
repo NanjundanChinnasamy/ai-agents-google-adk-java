@@ -7,6 +7,8 @@ import com.google.adk.finance.v1.FinanceAgentV1Factory;
 import com.google.adk.finance.v2.FinanceAgentV2Factory;
 import com.google.adk.finance.v3.agents.FinanceAgentV3Factory;
 import com.google.adk.finance.v4.FinanceAdvisorAgentV4Factory;
+import com.google.adk.finance.v5.FinanceAdvisorAgentV5Factory;
+import com.google.adk.finance.v5.YahooFinanceMcpClientManager;
 import com.google.adk.runner.InMemoryRunner;
 import com.google.adk.runner.Runner;
 import com.google.adk.socialspark.agents.DraftAgentFactory;
@@ -51,10 +53,11 @@ public final class AgentConsoleRunner {
         System.out.println("  'exit' or 'quit'   : Stop the console");
         System.out.println("  'state'            : View current agent state variables");
         System.out.println("  'draft_only <p>'   : Test draft_agent in isolation");
-        System.out.println("  'finance_v1 <p>'   : Test finance_agent_v1 directly");
-        System.out.println("  'finance_v2 <p>'   : Test finance_agent_v2 directly");
-        System.out.println("  'finance_v3 <p>'   : Test finance_agent_v3 directly");
+        System.out.println("  'finance_v1 <p>'   : Test finance_advisor_v1 directly");
+        System.out.println("  'finance_v2 <p>'   : Test finance_advisor_v2 directly");
+        System.out.println("  'finance_v3 <p>'   : Test finance_advisor_v3 directly");
         System.out.println("  'finance_v4 <p>'   : Test finance_advisor_v4 directly");
+        System.out.println("  'finance_v5 <p>'   : Test finance_advisor_v5 directly");
         System.out.println("--------------------------------------------------\n");
 
         try (Scanner scanner = new Scanner(System.in)) {
@@ -84,31 +87,43 @@ public final class AgentConsoleRunner {
                 continue;
             }
 
-            if (input.toLowerCase().startsWith("finance_v1 ")) {
-                String financePrompt = input.substring("finance_v1 ".length()).trim();
-                System.out.println("\n[Testing finance_agent_v1 directly...]");
+            if (input.toLowerCase().startsWith("finance_v1 ") || input.toLowerCase().startsWith("finance_advisor_v1 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v1 ") ? "finance_v1 ".length() : "finance_advisor_v1 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v1 directly...]");
                 testFinanceV1Directly(financePrompt);
                 continue;
             }
 
-            if (input.toLowerCase().startsWith("finance_v2 ")) {
-                String financePrompt = input.substring("finance_v2 ".length()).trim();
-                System.out.println("\n[Testing finance_agent_v2 directly...]");
+            if (input.toLowerCase().startsWith("finance_v2 ") || input.toLowerCase().startsWith("finance_advisor_v2 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v2 ") ? "finance_v2 ".length() : "finance_advisor_v2 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v2 directly...]");
                 testFinanceV2Directly(financePrompt);
                 continue;
             }
 
-            if (input.toLowerCase().startsWith("finance_v3 ")) {
-                String financePrompt = input.substring("finance_v3 ".length()).trim();
-                System.out.println("\n[Testing finance_agent_v3 directly...]");
+            if (input.toLowerCase().startsWith("finance_v3 ") || input.toLowerCase().startsWith("finance_advisor_v3 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v3 ") ? "finance_v3 ".length() : "finance_advisor_v3 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v3 directly...]");
                 testFinanceV3Directly(financePrompt);
                 continue;
             }
 
-            if (input.toLowerCase().startsWith("finance_v4 ")) {
-                String financePrompt = input.substring("finance_v4 ".length()).trim();
+            if (input.toLowerCase().startsWith("finance_v4 ") || input.toLowerCase().startsWith("finance_advisor_v4 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v4 ") ? "finance_v4 ".length() : "finance_advisor_v4 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
                 System.out.println("\n[Testing finance_advisor_v4 directly...]");
                 testFinanceV4Directly(financePrompt);
+                continue;
+            }
+
+            if (input.toLowerCase().startsWith("finance_v5 ") || input.toLowerCase().startsWith("finance_advisor_v5 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v5 ") ? "finance_v5 ".length() : "finance_advisor_v5 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v5 directly...]");
+                testFinanceV5Directly(financePrompt);
                 continue;
             }
 
@@ -244,7 +259,7 @@ public final class AgentConsoleRunner {
                     new HashMap<>()
             );
 
-            System.out.print("\nFinance Agent v1 > ");
+            System.out.print("\nFinance Advisor v1 > ");
             flow.blockingForEach(event -> {
                 if (event.content().isPresent()) {
                     for (Part p : event.content().get().parts().orElse(List.of())) {
@@ -254,7 +269,7 @@ public final class AgentConsoleRunner {
             });
             System.out.println();
         } catch (Exception e) {
-            System.err.println("\n[Error running finance_agent_v1]: " + e.getMessage());
+            System.err.println("\n[Error running finance_advisor_v1]: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -278,7 +293,7 @@ public final class AgentConsoleRunner {
                     new HashMap<>()
             );
 
-            System.out.print("\nFinance Agent v2 > ");
+            System.out.print("\nFinance Advisor v2 > ");
             flow.blockingForEach(event -> {
                 if (event.content().isPresent()) {
                     for (Part p : event.content().get().parts().orElse(List.of())) {
@@ -294,7 +309,7 @@ public final class AgentConsoleRunner {
             });
             System.out.println();
         } catch (Exception e) {
-            System.err.println("\n[Error running finance_agent_v2]: " + e.getMessage());
+            System.err.println("\n[Error running finance_advisor_v2]: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -318,7 +333,7 @@ public final class AgentConsoleRunner {
                     new HashMap<>()
             );
 
-            System.out.print("\nFinance Agent v3 > ");
+            System.out.print("\nFinance Advisor v3 > ");
             flow.blockingForEach(event -> {
                 if (event.content().isPresent()) {
                     for (Part p : event.content().get().parts().orElse(List.of())) {
@@ -334,7 +349,7 @@ public final class AgentConsoleRunner {
             });
             System.out.println();
         } catch (Exception e) {
-            System.err.println("\n[Error running finance_agent_v3]: " + e.getMessage());
+            System.err.println("\n[Error running finance_advisor_v3]: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -379,25 +394,75 @@ public final class AgentConsoleRunner {
         }
     }
 
+    public static void testFinanceV5Directly(String prompt) {
+        try (YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager()) {
+            mcpManager.start();
+            LlmAgent advisorAgent = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(mcpManager.getMcpToolset());
+            Runner runner = new InMemoryRunner(advisorAgent, FinanceAdvisorAgentV5Factory.AGENT_NAME);
+            Content userContent = Content.builder()
+                    .role("user")
+                    .parts(List.of(Part.fromText(prompt)))
+                    .build();
+
+            ensureSession(runner, "cli-tester", "finance-v5-cli", Map.of());
+
+            Flowable<Event> flow = runner.runAsync(
+                    "cli-tester",
+                    "finance-v5-cli",
+                    userContent,
+                    RunConfig.builder().build(),
+                    new HashMap<>()
+            );
+
+            System.out.print("\nFinance Advisor v5 > ");
+            flow.blockingForEach(event -> {
+                if (event.content().isPresent()) {
+                    for (Part p : event.content().get().parts().orElse(List.of())) {
+                        p.functionCall().ifPresent(fc ->
+                                System.out.println("\n[Tool Call] -> " + fc.name() + "(" + fc.args() + ")")
+                        );
+                        p.functionResponse().ifPresent(fr ->
+                                System.out.println("[Tool Response] <- " + fr.name() + " executed.")
+                        );
+                        p.text().ifPresent(System.out::print);
+                    }
+                }
+            });
+            System.out.println();
+        } catch (Exception e) {
+            System.err.println("\n[Error running finance_advisor_v5]: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private static void runTurn(String prompt, Map<String, Object> state, boolean printOutput) {
         if (prompt.toLowerCase().startsWith("draft_only ")) {
             testDraftAgentDirectly(prompt.substring("draft_only ".length()).trim());
             return;
         }
-        if (prompt.toLowerCase().startsWith("finance_v1 ")) {
-            testFinanceV1Directly(prompt.substring("finance_v1 ".length()).trim());
+        if (prompt.toLowerCase().startsWith("finance_v1 ") || prompt.toLowerCase().startsWith("finance_advisor_v1 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v1 ") ? "finance_v1 ".length() : "finance_advisor_v1 ".length();
+            testFinanceV1Directly(prompt.substring(len).trim());
             return;
         }
-        if (prompt.toLowerCase().startsWith("finance_v2 ")) {
-            testFinanceV2Directly(prompt.substring("finance_v2 ".length()).trim());
+        if (prompt.toLowerCase().startsWith("finance_v2 ") || prompt.toLowerCase().startsWith("finance_advisor_v2 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v2 ") ? "finance_v2 ".length() : "finance_advisor_v2 ".length();
+            testFinanceV2Directly(prompt.substring(len).trim());
             return;
         }
-        if (prompt.toLowerCase().startsWith("finance_v3 ")) {
-            testFinanceV3Directly(prompt.substring("finance_v3 ".length()).trim());
+        if (prompt.toLowerCase().startsWith("finance_v3 ") || prompt.toLowerCase().startsWith("finance_advisor_v3 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v3 ") ? "finance_v3 ".length() : "finance_advisor_v3 ".length();
+            testFinanceV3Directly(prompt.substring(len).trim());
             return;
         }
-        if (prompt.toLowerCase().startsWith("finance_v4 ")) {
-            testFinanceV4Directly(prompt.substring("finance_v4 ".length()).trim());
+        if (prompt.toLowerCase().startsWith("finance_v4 ") || prompt.toLowerCase().startsWith("finance_advisor_v4 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v4 ") ? "finance_v4 ".length() : "finance_advisor_v4 ".length();
+            testFinanceV4Directly(prompt.substring(len).trim());
+            return;
+        }
+        if (prompt.toLowerCase().startsWith("finance_v5 ") || prompt.toLowerCase().startsWith("finance_advisor_v5 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v5 ") ? "finance_v5 ".length() : "finance_advisor_v5 ".length();
+            testFinanceV5Directly(prompt.substring(len).trim());
             return;
         }
         Runner runner = new InMemoryRunner(SocialPosterAgentFactory.createRootAgent(), "social_poster");

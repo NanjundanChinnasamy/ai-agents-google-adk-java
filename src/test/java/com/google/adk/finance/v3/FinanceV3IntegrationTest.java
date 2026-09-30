@@ -36,7 +36,7 @@ public class FinanceV3IntegrationTest {
         LlmAgent searchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
 
         assertThat(searchAgent).isNotNull();
-        assertThat(searchAgent.name()).isEqualTo("market_researcher");
+        assertThat(searchAgent.name()).isEqualTo("stockmarket_researcher");
         assertThat(searchAgent.tools().blockingGet()).hasSize(1);
         assertThat(searchAgent.tools().blockingGet().get(0)).isSameAs(GoogleSearchTool.INSTANCE);
         assertThat(searchAgent.outputKey()).isEqualTo(Optional.of("research_findings"));
@@ -47,17 +47,17 @@ public class FinanceV3IntegrationTest {
         LlmAgent agent = FinanceAgentV3Factory.createFinanceAgentV3();
 
         assertThat(agent).isNotNull();
-        assertThat(agent.name()).isEqualTo("finance_agent_v3");
+        assertThat(agent.name()).isEqualTo("finance_advisor_v3");
         assertThat(agent.description()).contains("Google Search evidence");
-        assertThat(agent.instruction().toString()).contains("FinanceAgent v3");
-        assertThat(agent.instruction().toString()).contains("market_researcher");
+        assertThat(agent.instruction().toString()).contains("Finance Advisor v3");
+        assertThat(agent.instruction().toString()).contains("stockmarket_researcher");
         assertThat(agent.instruction().toString()).contains("portfolio_math");
         assertThat(agent.instruction().toString()).contains("load_customer_portfolio");
         assertThat(agent.instruction().toString()).contains("Disclaimer");
 
         List<BaseTool> tools = agent.tools().blockingGet();
         assertThat(tools).isNotEmpty();
-        assertThat(tools).anyMatch(t -> t.name().equals("market_researcher"));
+        assertThat(tools).anyMatch(t -> t.name().equals("stockmarket_researcher"));
         assertThat(tools).anyMatch(t -> t instanceof PortfolioMathTool);
         assertThat(tools).anyMatch(t -> t instanceof LoadCustomerPortfolioTool);
     }

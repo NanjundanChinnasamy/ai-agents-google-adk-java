@@ -30,9 +30,9 @@ public class FinanceV2IntegrationTest {
         LlmAgent agent = FinanceAgentV2Factory.createFinanceAgentV2();
 
         assertThat(agent).isNotNull();
-        assertThat(agent.name()).isEqualTo("finance_agent_v2");
+        assertThat(agent.name()).isEqualTo("finance_advisor_v2");
         assertThat(agent.description()).contains("holdings state management");
-        assertThat(agent.instruction().toString()).contains("FinanceAgent v2");
+        assertThat(agent.instruction().toString()).contains("Finance Advisor v2");
         assertThat(agent.instruction().toString()).contains("{customer_id?}");
         assertThat(agent.instruction().toString()).contains("{portfolio_id?}");
         assertThat(agent.instruction().toString()).contains("{portfolio_holdings?}");

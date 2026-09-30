@@ -90,7 +90,13 @@ The application accommodates two complementary autonomous multi-agent systems sh
 - **Week 2 — Version 4 (`finance.v4`)**:
   - **Dynamic Domain Skills (`SkillToolset` & `LocalSkillSource`)**: Modular on-demand domain capability skills (`skills/finance/`): `finance-fundamentals`, `fundamental-analysis`, `valuation`, `risk-management`, `portfolio-analysis`, and `market-research`.
   - **Curated Grounding Knowledge (`knowledge/`)**: Project-level domain frameworks (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) accessed via `ProjectKnowledgeTool` (`read_project_knowledge`).
-  - **Three-Tier Knowledge Hierarchy & Grounding Transparency**: Explicitly distinguishes *Project Knowledge* (curated frameworks), *Current Information* (live Google Search via `market_researcher`), and *Analysis & Interpretation* (model reasoning) concluded with mandatory regulatory disclaimers.
+  - **Three-Tier Knowledge Hierarchy & Grounding Transparency**: Explicitly distinguishes *Project Knowledge* (curated frameworks), *Current Information* (live Google Search via `stockmarket_researcher`), and *Analysis & Interpretation* (model reasoning) concluded with mandatory regulatory disclaimers.
+- **Week 3 — Version 5 (`finance.v5`)**:
+  - **Model Context Protocol (MCP) Integration**: Consumes live structured market tools exposed by the standalone Java Yahoo Finance MCP server via Google ADK Java's `McpToolset` over STDIO transport.
+  - **Dynamic Tool Discovery**: Automatically launches `mcp/yahoo-finance-mcp.jar`, verifies readiness with timeout, and discovers 4 structured tools: `get_stock_info`, `get_stock_actions`, `get_financial_statement`, `get_recommendations`.
+  - **Multi-Source Intelligence Triangulation**: Seamlessly unifies Yahoo Finance MCP (structured quotes, financials, analyst ratings), Google Search (breaking news via `stockmarket_researcher`), curated domain skills, grounding knowledge, SQLite customer portfolio state, and deterministic Java math.
+  - **Process Lifecycle & Graceful Shutdown**: Subprocess management preventing orphaned processes via JVM shutdown hooks and clean `McpToolset.close()` execution.
+  - **Reference Guide**: See comprehensive architectural blueprint in [`docs/finance-agent-v5.md`](docs/finance-agent-v5.md).
 
 ---
 
@@ -109,7 +115,10 @@ ai-agents-google-adk-java/
 ├── test-finance-v2.bat / .sh  # Dedicated CLI runner for Finance Agent v2
 ├── test-finance-v3.bat / .sh  # Dedicated CLI runner for Finance Agent v3
 ├── test-finance-v4.bat / .sh  # Dedicated CLI runner for Finance Advisor v4
+├── test-finance-v5.bat / .sh  # Dedicated CLI runner for Finance Advisor v5 (Yahoo Finance MCP)
 ├── .env.example               # Environment variables template
+├── docs/                      # Technical documentation and milestone references
+│   └── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
 ├── knowledge/                 # Curated finance domain grounding knowledge (glossary, valuation, risk, etc.)
 ├── skills/                    # Agent Skills (Social Spark & Finance Domain Skills)
 │   ├── brand-voice/           # Social Spark: Brand tone & British English rules
@@ -117,10 +126,21 @@ ai-agents-google-adk-java/
 │   ├── post-formatter/        # Social Spark: Post structural templates
 │   ├── poster-style/          # Social Spark: Aesthetic rules
 │   └── finance/               # Finance Domain Skills (finance-fundamentals, valuation, risk, etc.)
-├── mcp/                       # Local MCP servers (linkedin_server.py)
+├── mcp/                       # Model Context Protocol (MCP) Servers
+│   ├── linkedin_server.py     # LinkedIn FastMCP stdio server (Python)
+│   ├── yahoo-finance-mcp.jar  # Standalone executable Yahoo Finance MCP Server (Java 21)
+│   ├── yahoo_finance_server.bat # Windows stdio launcher for Yahoo Finance MCP Server
+│   ├── yahoo_finance_server.sh  # Linux/macOS stdio launcher for Yahoo Finance MCP Server
+│   └── README.md              # MCP architecture, tool specifications & client setup
 └── src/
     ├── main/
     │   ├── java/com/google/adk/
+    │   │   ├── mcp/                                   # MCP Server implementations
+    │   │   │   └── yahoofinance/                      # Yahoo Finance Java MCP Server
+    │   │   │       ├── YahooFinanceMcpServer.java     # Stdio MCP sync server & 4 registered tools
+    │   │   │       ├── YahooFinanceService.java       # Financial analytics, metrics & statements service
+    │   │   │       └── YahooFinanceApiClient.java     # HTTP client with crumb & cookie authentication
+    │   │   │
     │   │   ├── socialspark/                           # DOMAIN 1: Social Spark
     │   │   │   ├── Application.java                   # Main entrypoint & Javalin web server (Port 8000)
     │   │   │   ├── AdkDevUiApplication.java           # Official Google ADK Web Dev UI (Port 8080)
@@ -164,15 +184,26 @@ ai-agents-google-adk-java/
     │   │       │   ├── PortfolioMathTool.java                 # BaseTool for PnL, allocation & SMA math
     │   │       │   └── FinanceConsoleV3.java                  # Interactive search & math CLI console
     │   │       │
-    │   │       └── v4/                                # Week 2: Skills + Grounding Knowledge
-    │   │           ├── ProjectKnowledgeTool.java              # BaseTool reading curated knowledge markdown
-    │   │           ├── FinanceAdvisorAgentV4Factory.java      # Root advisor factory wiring skills, knowledge & search
-    │   │           └── FinanceConsoleV4.java                  # Interactive skills & knowledge CLI console
+    │   │       ├── v4/                                # Week 2: Skills + Grounding Knowledge
+    │   │       │   ├── ProjectKnowledgeTool.java              # BaseTool reading curated knowledge markdown
+    │   │       │   ├── FinanceAdvisorAgentV4Factory.java      # Root advisor factory wiring skills, knowledge & search
+    │   │       │   └── FinanceConsoleV4.java                  # Interactive skills & knowledge CLI console
+    │   │       │
+    │   │       └── v5/                                # Week 3: Yahoo Finance MCP Integration
+    │   │           ├── YahooFinanceMcpClientManager.java      # Client lifecycle, subprocess launch & readiness
+    │   │           ├── FinanceAdvisorAgentV5Factory.java      # Root advisor factory wiring MCP toolset & search
+    │   │           └── FinanceConsoleV5.java                  # Interactive MCP console & tool execution tracing
     │   │
     │   └── resources/logback.xml                      # Logging configuration
     │
     └── test/
         └── java/com/google/adk/
+            ├── mcp/                                   # MCP test suite
+            │   └── yahoofinance/                      # Yahoo Finance MCP tests
+            │       ├── YahooFinanceTickerNormalizationTest.java
+            │       ├── YahooFinanceServiceLiveTest.java
+            │       ├── YahooFinanceMcpServerTest.java
+            │       └── YahooFinanceMcpStdioProcessIntegrationTest.java
             ├── socialspark/                           # Social Spark test suite
             │   ├── SocialSparkIntegrationTest.java
             │   ├── PostRepositoryTest.java
@@ -187,8 +218,10 @@ ai-agents-google-adk-java/
                 ├── v3/
                 │   ├── PortfolioMathToolTest.java
                 │   └── FinanceV3IntegrationTest.java
-                └── v4/
-                    └── FinanceV4IntegrationTest.java
+                ├── v4/
+                │   └── FinanceV4IntegrationTest.java
+                └── v5/
+                    └── FinanceV5IntegrationTest.java
 ```
 
 ---
@@ -261,12 +294,14 @@ Navigate directly to:
   - `social_poster`: Test the root multi-agent orchestrator coordinating research, drafting, and MCP publishing.
   - `draft_agent`: Test the copywriting specialist in isolation with its Agent Skills.
   - `research_agent`: Test the Google Search grounding specialist.
-  - `finance_agent_v1`: Test the foundational financial analyst for asset allocations, valuation metrics, and macro drivers.
-  - `finance_agent_v2`: Test the state-managed portfolio analyst with SQLite holdings persistence and `load_customer_portfolio` tool.
-  - `finance_agent_v3`: Test the grounded research and valuation analyst with live `market_researcher` (`GoogleSearchTool.INSTANCE`) web grounding and deterministic `PortfolioMathTool` calculations.
+  - `finance_advisor_v1`: Test the foundational financial analyst for asset allocations, valuation metrics, and macro drivers.
+  - `finance_advisor_v2`: Test the state-managed portfolio analyst with SQLite holdings persistence and `load_customer_portfolio` tool.
+  - `finance_advisor_v3`: Test the grounded research and valuation analyst with live `stockmarket_researcher` (`GoogleSearchTool.INSTANCE`) web grounding and deterministic `PortfolioMathTool` calculations.
+  - `stockmarket_researcher`: Test the isolated Google Search stock market research specialist in isolation.
   - `finance_advisor_v4`: Test the structured advisor combining 6 domain skills (`load_skill`), curated project grounding knowledge (`read_project_knowledge`), and Google Search.
-- **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`, `market_researcher`) and registered tools.
-- **Tool Inspection**: Click on any executed tool chip (e.g. `market_researcher`, `load_skill`, `read_project_knowledge`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
+  - `finance_advisor_v5`: Test the institutional-grade advisor combining Yahoo Finance MCP (`get_stock_info`, `get_stock_actions`, `get_financial_statement`, `get_recommendations`), Google Search (`stockmarket_researcher`), domain skills, grounding knowledge, SQLite portfolio state, and deterministic math.
+- **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`, `stockmarket_researcher`) and registered tools.
+- **Tool Inspection**: Click on any executed tool chip (e.g. `stockmarket_researcher`, `load_skill`, `read_project_knowledge`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`, `get_stock_info`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
 - **Session Management**: Create new sessions via `+ New Session` or inspect past event steps sequentially (`Event 1 of N`, `Request`, `Response`).
 
 ---
@@ -299,17 +334,17 @@ Once inside the prompt (`User > `):
   User > draft_only Write a tweet about modern Java features
   ```
   Bypasses research and runs only the drafting specialist with local skill loading.
-- **Test `finance_agent_v1` directly**:
+- **Test `finance_advisor_v1` directly**:
   ```text
   User > finance_v1 Explain the difference between growth and value investing
   ```
   Runs the conversational financial analyst answering asset allocation, macro, and valuation inquiries.
-- **Test `finance_agent_v2` directly**:
+- **Test `finance_advisor_v2` directly**:
   ```text
   User > finance_v2 Can you review my portfolio?
   ```
   Runs the state-managed portfolio analyst, prompts for customer ID, loads SQLite holdings, and maintains session context.
-- **Test `finance_agent_v3` directly**:
+- **Test `finance_advisor_v3` directly**:
   ```text
   User > finance_v3 Search recent news for Reliance and calculate PnL for 2 shares bought at 1000 INR with current price 1300 INR
   ```
@@ -319,6 +354,11 @@ Once inside the prompt (`User > `):
   User > finance_v4 What is P/E and is Infosys currently considered high?
   ```
   Runs the structured advisor combining 6 domain skills, curated project knowledge files, and Google Search.
+- **Test `finance_advisor_v5` directly**:
+  ```text
+  User > finance_v5 What is the latest stock price and analyst recommendations for NVDA?
+  ```
+  Runs the institutional advisor combining Yahoo Finance MCP tools with Google Search, domain skills, and portfolio math.
 - **Inspect Session State**:
   ```text
   User > state
@@ -440,7 +480,7 @@ Run the grounded market research and portfolio valuation analyst combining live 
 ```
 
 **Key Capabilities & Tool Responsibilities:**
-- **Google Search Grounding (`market_researcher` via `GoogleSearchTool.INSTANCE`)**:
+- **Google Search Grounding (`stockmarket_researcher` via `GoogleSearchTool.INSTANCE`)**:
   - Recent company news and developments
   - Latest quarterly earnings reports and revenue growth
   - Analyst consensus ratings and price targets
@@ -479,7 +519,7 @@ Run the structured financial advisor combining on-demand domain skills, curated 
 **The Three Knowledge Layers:**
 1. **Model Knowledge**: Inherent LLM general concepts (e.g. *"What is a stock?"*).
 2. **Project Grounding Knowledge**: Curated, authoritative frameworks in `knowledge/` (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) read on-demand via `read_project_knowledge`.
-3. **Google Search Grounding**: Live external web information retrieved via `market_researcher` when recent news, earnings results, or market developments are requested.
+3. **Google Search Grounding**: Live external web information retrieved via `stockmarket_researcher` when recent news, earnings results, or market developments are requested.
 
 **The 6 Domain Skills in `skills/finance/`:**
 - `finance-fundamentals`: Core financial terms, equity concepts, and profitability metrics.
@@ -497,14 +537,78 @@ Responses systematically distinguish:
 - `### Analysis & Interpretation`: Contextual reasoning without asserting false causation.
 - `### Regulatory Disclaimer`: Mandatory non-advice compliance notice.
 
----
-
-### 5. Running Unit & Integration Tests
+#### Week 3 — Version 5: Yahoo Finance MCP Integration (`finance.v5`)
+Run the institutional-grade financial research advisor connecting Google ADK Java directly to the standalone Yahoo Finance MCP Server over STDIO transport:
 ```bash
 # Windows
-.\gradlew.bat test
+.\test-finance-v5.bat
 
 # macOS / Linux
+./test-finance-v5.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV5 --console=plain -q
+
+# One-shot queries:
+.\test-finance-v5.bat "What is the latest available price and valuation for Infosys (INFY)?"
+.\test-finance-v5.bat "Show recent dividend payouts and stock splits for Apple (AAPL)."
+.\test-finance-v5.bat "Give me the latest quarterly income statement for Microsoft (MSFT)."
+.\test-finance-v5.bat "What are current analyst recommendations and price targets for NVDA?"
+.\test-finance-v5.bat "What is the latest Infosys price and what recent events may have affected the company?"
+.\test-finance-v5.bat "I am customer 1001. Load my portfolio, fetch current market prices for my holdings, and evaluate my performance."
+```
+
+**Key Architectural Features in V5:**
+- **Automatic MCP Startup & Readiness**: `YahooFinanceMcpClientManager` starts `mcp/yahoo-finance-mcp.jar` as a child process, checks for protocol readiness within a 15-second timeout, and verifies tool discovery.
+- **Dynamic Tool Discovery**: ADK discovers the 4 tools (`get_stock_info`, `get_stock_actions`, `get_financial_statement`, `get_recommendations`) without hardcoded tool definitions.
+- **Multi-Source Intelligence Triangulation**: The agent selects between Yahoo Finance MCP (structured empirical data), Google Search via `stockmarket_researcher` (breaking news & catalysts), Project Knowledge (curated investment principles), Domain Skills (`skills/finance/`), SQLite Portfolio (`load_customer_portfolio`), and Deterministic Math (`portfolio_math`).
+- **Graceful Process Shutdown**: Uses JVM shutdown hooks to ensure child MCP processes terminate cleanly without zombies.
+- **Documentation**: See [`docs/finance-agent-v5.md`](docs/finance-agent-v5.md) for full architecture and sequence diagrams.
+
+---
+
+### 5. Model Context Protocol (MCP) Server: Yahoo Finance (Java)
+
+A production-grade, standalone MCP server written in **Java 21** using the official Model Context Protocol Java SDK (`io.modelcontextprotocol.sdk:mcp`) and Google ADK foundations. It exposes 4 core financial analytical tools over standard input/output (`stdio`) transport:
+
+- **`get_stock_info`**: Valuation, trading metrics, P/E, EPS, beta, margins, returns, balance sheet highlights, and company profile with US class-share auto-normalization (`BRK.B` -> `BRK-B`).
+- **`get_stock_actions`**: Historical dividends and stock split corporate actions over 5 years.
+- **`get_financial_statement`**: Annual or quarterly income statements, balance sheets, and cash flow statements (`income_stmt`, `quarterly_income_stmt`, `balance_sheet`, `quarterly_balance_sheet`, `cashflow`, `quarterly_cashflow`).
+- **`get_recommendations`**: Consensus analyst recommendation trends or firm upgrade/downgrade history with configurable lookback.
+
+#### Build the Standalone Server JAR
+```bash
+# Windows / Linux / macOS:
+./gradlew buildYahooFinanceMcpJar
+# Output created at: mcp/yahoo-finance-mcp.jar
+```
+
+#### Launch the Server over stdio
+```bash
+# Windows launcher:
+mcp\yahoo_finance_server.bat
+
+# Linux / macOS launcher:
+mcp/yahoo_finance_server.sh
+
+# Or directly with Gradle:
+./gradlew runYahooFinanceMcp
+```
+
+#### Client Configuration (Claude Desktop / ADK)
+See [`mcp/README.md`](mcp/README.md) for full configuration blocks for Claude Desktop (`claude_desktop_config.json`) and Google ADK Java (`ServerParameters` & `McpToolset`).
+
+---
+
+### 6. Running Unit & Integration Tests
+```bash
+# Run entire test suite (Social Spark + Finance Milestones + Yahoo Finance MCP)
 ./gradlew test
+
+# Run only Yahoo Finance MCP server test suite:
+./gradlew test --tests com.google.adk.mcp.yahoofinance.*
+
+# Run only Finance Advisor V5 integration tests:
+./gradlew test --tests com.google.adk.finance.v5.*
 ```
 

@@ -6,6 +6,8 @@ import com.google.adk.finance.v2.FinanceAgentV2Factory;
 import com.google.adk.finance.v3.agents.FinanceAgentV3Factory;
 import com.google.adk.finance.v3.agents.MarketResearchAgentFactory;
 import com.google.adk.finance.v4.FinanceAdvisorAgentV4Factory;
+import com.google.adk.finance.v5.FinanceAdvisorAgentV5Factory;
+import com.google.adk.finance.v5.YahooFinanceMcpClientManager;
 import com.google.adk.socialspark.agents.DraftAgentFactory;
 import com.google.adk.socialspark.agents.ResearchAgentFactory;
 import com.google.adk.socialspark.agents.SocialPosterAgentFactory;
@@ -30,11 +32,27 @@ public final class AdkDevUiApplication {
         LlmAgent financeAgentV1 = FinanceAgentV1Factory.createFinanceAgentV1();
         LlmAgent financeAgentV2 = FinanceAgentV2Factory.createFinanceAgentV2();
         LlmAgent financeAgentV3 = FinanceAgentV3Factory.createFinanceAgentV3();
-        LlmAgent marketResearchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
+        LlmAgent stockMarketResearchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
         LlmAgent financeAdvisorAgentV4 = FinanceAdvisorAgentV4Factory.createFinanceAdvisorAgentV4();
 
+        // Initialize Yahoo Finance MCP client for V5
+        LlmAgent financeAdvisorAgentV5;
+        try {
+            YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager();
+            mcpManager.start();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    mcpManager.close();
+                } catch (Exception ignored) {}
+            }));
+            financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(mcpManager.getMcpToolset());
+        } catch (Exception e) {
+            System.err.println("Warning: Could not start Yahoo Finance MCP client for V5: " + e.getMessage());
+            financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(null);
+        }
+
         // Boot Spring Boot ADK Web Server with static agent registration
-        AdkWebServer.start(rootAgent, draftAgent, researchAgent, financeAgentV1, financeAgentV2, financeAgentV3, marketResearchAgent, financeAdvisorAgentV4);
+        AdkWebServer.start(rootAgent, draftAgent, researchAgent, financeAgentV1, financeAgentV2, financeAgentV3, stockMarketResearchAgent, financeAdvisorAgentV4, financeAdvisorAgentV5);
     }
 
     private AdkDevUiApplication() {}

@@ -78,11 +78,11 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 | Week | Milestone Version | Core Google ADK Concepts | Domain Capability Added | Package Path |
 |---|---|---|---|---|
-| **1** | **Finance Agent v1** | `LlmAgent`, `AppConfig.createModel()`, Instruction Engineering, `InMemoryRunner`, `SessionService` | Conversational portfolio analyst with basic Q&A | `com.google.adk.finance.v1` |
-| **1** | **Finance Agent v2** | `Context`, State variables, `{placeholder?}` prompt templating, `stateDelta` inspection | Persistent portfolio state memory & multi-turn drift awareness | `com.google.adk.finance.v2` |
-| **2** | **Finance Agent v3** | Custom `BaseTool`, `GoogleSearchTool.INSTANCE`, Tool schema validation (`FunctionDeclaration`) | Deterministic financial math calculations + live market news retrieval | `com.google.adk.finance.v3` |
-| **2** | **Finance Agent v4** | `LocalSkillSource`, `SkillToolset`, Markdown domain guidelines | Audit rules, scenario modeling templates & report formatting skills | `com.google.adk.finance.v4` |
-| **3** | **Finance Agent v5** | `McpToolset`, `ServerParameters`, FastMCP stdio/HTTP | Real-time market quotes, SEC fundamentals & macro indicators via MCP | `com.google.adk.finance.v5` |
+| **1** | **Finance Advisor v1** | `LlmAgent`, `AppConfig.createModel()`, Instruction Engineering, `InMemoryRunner`, `SessionService` | Conversational portfolio analyst with basic Q&A | `com.google.adk.finance.v1` |
+| **1** | **Finance Advisor v2** | `Context`, State variables, `{placeholder?}` prompt templating, `stateDelta` inspection | Persistent portfolio state memory & multi-turn drift awareness | `com.google.adk.finance.v2` |
+| **2** | **Finance Advisor v3** | Custom `BaseTool`, `GoogleSearchTool.INSTANCE`, Tool schema validation (`FunctionDeclaration`) | Deterministic financial math calculations + live market news retrieval | `com.google.adk.finance.v3` |
+| **2** | **Finance Advisor v4** | `LocalSkillSource`, `SkillToolset`, Markdown domain guidelines | Audit rules, scenario modeling templates & report formatting skills | `com.google.adk.finance.v4` |
+| **3** | **Finance Advisor v5** | `McpToolset`, `ServerParameters`, FastMCP stdio/HTTP | Real-time market quotes, SEC fundamentals & macro indicators via MCP | `com.google.adk.finance.v5` |
 | **3** | **Finance Agent v6** | Multi-Agent hierarchy, `AgentTool.create(...)`, Specialist division of labor | Specialist sub-agents: Researcher, Scenario Analyst, Report Writer | `com.google.adk.finance.v6` |
 | **4** | **Finance Agent v7** | Sequential pipelines, Parallel fan-out/fan-in (`RxJava`/`Reactor`), Critic loops | End-to-end multi-step orchestration with parallel stock research | `com.google.adk.finance.v7` |
 | **4** | **Finance Agent v8** | Callbacks (`BeforeAgent`, `AfterAgent`, `BeforeTool`, `AfterTool`, `AfterModel`), Guardrails | Compliance disclaimer injection, PII scrubbing, hallucination filters | `com.google.adk.finance.v8` |
@@ -185,24 +185,24 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 - **Core Files**:
   - [`PortfolioMathTool.java`](src/main/java/com/google/adk/finance/v3/PortfolioMathTool.java): Custom `BaseTool` for deterministic PnL, allocation weights, concentration risk, and technical indicators.
   - [`FinanceAgentV3Factory.java`](src/main/java/com/google/adk/finance/v3/agents/FinanceAgentV3Factory.java): Root agent factory in `v3.agents` coordinating market research, deterministic math, and portfolio ingestion.
-  - [`MarketResearchAgentFactory.java`](src/main/java/com/google/adk/finance/v3/agents/MarketResearchAgentFactory.java): Decoupled atomic agent factory in `v3.agents` adhering to SRP, isolating `GoogleSearchTool.INSTANCE` within `market_researcher`.
+  - [`MarketResearchAgentFactory.java`](src/main/java/com/google/adk/finance/v3/agents/MarketResearchAgentFactory.java): Decoupled atomic agent factory in `v3.agents` adhering to SRP, isolating `GoogleSearchTool.INSTANCE` within `stockmarket_researcher`.
   - [`FinanceConsoleV3.java`](src/main/java/com/google/adk/finance/v3/FinanceConsoleV3.java): Interactive terminal console showcasing real-time tool inspection and search grounding.
   - [`PortfolioMathToolTest.java`](src/test/java/com/google/adk/finance/v3/PortfolioMathToolTest.java): Unit tests verifying math calculation accuracy.
   - [`FinanceV3IntegrationTest.java`](src/test/java/com/google/adk/finance/v3/FinanceV3IntegrationTest.java): Integration tests verifying atomic agent bindings, tool registrations, and agent execution.
 - **ADK Classes & Concepts Learned**:
   - `com.google.adk.tools.GoogleSearchTool`: Grounding responses with live web search results (news, earnings, analyst commentary, filings).
-  - `com.google.adk.tools.AgentTool`: Wrapping an isolated search agent (`market_researcher`) to satisfy Gemini's API constraint (which prohibits mixing native search tools and client function declarations in the same generation step).
+  - `com.google.adk.tools.AgentTool`: Wrapping an isolated search agent (`stockmarket_researcher`) to satisfy Gemini's API constraint (which prohibits mixing native search tools and client function declarations in the same generation step).
   - Custom `com.google.adk.tools.BaseTool`: Offloading arithmetic and technical indicators to deterministic Java code to avoid LLM hallucinations.
   - Multi-tool binding: Combining web search grounding, deterministic math, and relational database loading in a single agent.
 - **Capability Matrix: Google Search Grounding vs. Java Tools**:
 
 | Analytical Capability | Google Search? | Tool / Method | Rationale |
 |---|:---:|---|---|
-| **Recent Company News** | ✅ Excellent | `market_researcher` | Real-time news retrieval, press releases, operational changes |
-| **Latest Results & Earnings** | ✅ Excellent | `market_researcher` | Quarterly SEC filings, revenue/EPS metrics, earnings calls |
-| **Recent Analyst Commentary** | ✅ Yes | `market_researcher` | Consensus ratings, price targets, upgrades/downgrades |
-| **Official Company Announcements** | ✅ Excellent | `market_researcher` | Corporate governance, regulatory disclosures, buybacks |
-| **Market & Macro Events** | ✅ Excellent | `market_researcher` | Interest rate hikes, inflation reports, geopolitical events, M&A |
+| **Recent Company News** | ✅ Excellent | `stockmarket_researcher` | Real-time news retrieval, press releases, operational changes |
+| **Latest Results & Earnings** | ✅ Excellent | `stockmarket_researcher` | Quarterly SEC filings, revenue/EPS metrics, earnings calls |
+| **Recent Analyst Commentary** | ✅ Yes | `stockmarket_researcher` | Consensus ratings, price targets, upgrades/downgrades |
+| **Official Company Announcements** | ✅ Excellent | `stockmarket_researcher` | Corporate governance, regulatory disclosures, buybacks |
+| **Market & Macro Events** | ✅ Excellent | `stockmarket_researcher` | Interest rate hikes, inflation reports, geopolitical events, M&A |
 | **Historical Price & Return Calculation** | ⚠️ Not Search | `portfolio_math` (`calculate_pnl`) | Deterministic arithmetic: Cost Basis, Current Valuation, PnL, Return % |
 | **Portfolio Allocation & Concentration** | ❌ Not Search | `portfolio_math` (`calculate_allocation`) | Asset weights (%) and single-stock concentration risk flags (>25%) |
 | **Technical Indicators** | ❌ Not Search | `portfolio_math` (`calculate_technical_indicator`) | Simple Moving Average (SMA), price range spread, percentage change |
@@ -219,7 +219,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
                    ┌─────────────────────────────────┼─────────────────────────────────┐
                    ▼                                 ▼                                 ▼
     +─────────────────────────────+   +─────────────────────────────+   +─────────────────────────────+
-    |  AgentTool(market_research) |   |      PortfolioMathTool      |   |  LoadCustomerPortfolioTool  |
+    | AgentTool(stockmarket_res.) |   |      PortfolioMathTool      |   |  LoadCustomerPortfolioTool  |
     | Isolated Search Agent:      |   | Deterministic Math:         |   | Relational DB Ingestion:    |
     | - GoogleSearchTool.INSTANCE |   | - PnL & Cost Basis          |   | - Customer 1001 (RELIANCE)  |
     | - Live news & Q3 earnings   |   | - Allocation Weights (%)    |   | - Customer 1002 (INFY)      |
@@ -234,7 +234,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 ### Week 2 — Version 4: Skills + Grounding Knowledge (`finance.v4`)
 - **Package**: `com.google.adk.finance.v4`
 - **Core Files**:
-  - [`FinanceAdvisorAgentV4Factory.java`](src/main/java/com/google/adk/finance/v4/FinanceAdvisorAgentV4Factory.java): Builds `finance_advisor_v4` combining `SkillToolset`, `ProjectKnowledgeTool`, `AgentTool(market_researcher)`, `PortfolioMathTool`, and `LoadCustomerPortfolioTool`.
+  - [`FinanceAdvisorAgentV4Factory.java`](src/main/java/com/google/adk/finance/v4/FinanceAdvisorAgentV4Factory.java): Builds `finance_advisor_v4` combining `SkillToolset`, `ProjectKnowledgeTool`, `AgentTool(stockmarket_researcher)`, `PortfolioMathTool`, and `LoadCustomerPortfolioTool`.
   - [`ProjectKnowledgeTool.java`](src/main/java/com/google/adk/finance/v4/ProjectKnowledgeTool.java): Custom `BaseTool` executing `read_project_knowledge` against curated Markdown documents in `knowledge/`.
   - [`FinanceConsoleV4.java`](src/main/java/com/google/adk/finance/v4/FinanceConsoleV4.java): Dedicated interactive CLI runner supporting skill listing, knowledge reading, state inspection, and real-time tool tracking.
   - [`FinanceV4IntegrationTest.java`](src/test/java/com/google/adk/finance/v4/FinanceV4IntegrationTest.java): Comprehensive test suite covering the 5 canonical learning tests, portfolio ingestion, and tool validations.
@@ -247,7 +247,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
      - `knowledge/risk-framework.md`: Taxonomy of risks (systematic vs unsystematic, single-stock/sector concentration, liquidity, volatility, drawdown).
      - `knowledge/portfolio-principles.md`: Asset allocation, correlation ($\rho$), diversification benefits, and investment horizons.
      - `knowledge/market-research-framework.md`: Structured 8-stage methodology for corporate filings, earnings surprise, and guidance revisions.
-  3. **Google Search Grounding**: Real-time external web information retrieved on-demand via `market_researcher` when recent news, earnings results, or market developments are required.
+  3. **Google Search Grounding**: Real-time external web information retrieved on-demand via `stockmarket_researcher` when recent news, earnings results, or market developments are required.
 - **The 6 Domain Skills in `skills/finance/`**:
   - `skills/finance/finance-fundamentals/SKILL.md`: Core corporate finance concepts and ratio definitions.
   - `skills/finance/fundamental-analysis/SKILL.md`: Holistic multi-pillar analysis evaluating revenue, margins, capital return, and moat.
@@ -270,7 +270,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
                  │                  YES  │
                  │                       ▼
                  │                 Google Search
-                 │                 (market_researcher)
+                 │            (stockmarket_researcher)
                  │                       │
                  └───────────┬───────────┘
                              ▼
@@ -288,23 +288,57 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 ---
 
-### Week 3 — Version 5: Market Context Protocol (MCP) Integration (`finance.v5`)
-- **Package**: `com.google.adk.finance.v5`
-- **MCP Server**: `mcp/finance_market_server.py` (FastMCP stdio server exposing `get_quote`, `get_fundamentals`, `get_macro_rates`).
+### Week 3 — Version 5: Market Context Protocol (MCP) Integration (`finance.v5` & `mcp.yahoofinance`)
+- **Package**: `com.google.adk.finance.v5` and `com.google.adk.mcp.yahoofinance`
+- **Documentation**: See comprehensive reference in [`docs/finance-agent-v5.md`](docs/finance-agent-v5.md).
+- **MCP Server**: Standalone executable Java MCP server located in `mcp/` (`mcp/yahoo-finance-mcp.jar`, launched via `mcp/yahoo_finance_server.bat` or `mcp/yahoo_finance_server.sh`).
 - **Core Files**:
-  - `MarketMcpToolsetFactory.java`: Builds `McpToolset` configured for FastMCP execution.
-  - `FinanceAgentV5Factory.java`: Integrates live market data tools into the agent.
-- **ADK Classes Learned**:
-  - `com.google.adk.tools.mcp.McpToolset`
-  - `io.modelcontextprotocol.client.transport.ServerParameters`
-- **Takeaway**: Connect the agent system to standard financial data protocols over subprocess stdio or HTTP SSE.
+  - [`YahooFinanceMcpServer.java`](src/main/java/com/google/adk/mcp/yahoofinance/YahooFinanceMcpServer.java): Main entrypoint and `McpSyncServer` over stdio transport registering the 4 core financial tools with `ticker` and `symbol` alias support.
+  - [`YahooFinanceService.java`](src/main/java/com/google/adk/mcp/yahoofinance/YahooFinanceService.java): Business logic implementing data extraction, normalization, and JSON formatting for stock information, corporate actions, financial statements, and recommendations.
+  - [`YahooFinanceApiClient.java`](src/main/java/com/google/adk/mcp/yahoofinance/YahooFinanceApiClient.java): Low-level HTTP client managing cookie sessions, crumb authentication tokens, and US class-share ticker normalization (e.g. `BRK.B` -> `BRK-B`).
+  - [`YahooFinanceMcpClientManager.java`](src/main/java/com/google/adk/finance/v5/YahooFinanceMcpClientManager.java): Client lifecycle manager handling subprocess execution, 15-second readiness timeout, tool verification, and clean process termination.
+  - [`FinanceAdvisorAgentV5Factory.java`](src/main/java/com/google/adk/finance/v5/FinanceAdvisorAgentV5Factory.java): Root agent factory wiring `McpToolset`, `SkillToolset`, `ProjectKnowledgeTool`, `AgentTool(stockmarket_researcher)`, `PortfolioMathTool`, and `LoadCustomerPortfolioTool`.
+  - [`FinanceConsoleV5.java`](src/main/java/com/google/adk/finance/v5/FinanceConsoleV5.java): Dedicated interactive CLI console supporting real-time MCP tool tracking, multi-turn state, and automated JVM shutdown hook.
+  - [`FinanceV5IntegrationTest.java`](src/test/java/com/google/adk/finance/v5/FinanceV5IntegrationTest.java): Comprehensive integration test suite verifying startup, tool discovery, quote retrieval, actions, search wiring, math, and shutdown.
+- **The 4 Discovered MCP Tools**:
+  1. `get_stock_info`: Comprehensive stock price & trading metrics, valuation (P/E, forward P/E, PEG, P/B), operating margins, return ratios, balance sheet highlights, and company profile.
+  2. `get_stock_actions`: Historical dividend payments and stock splits with execution dates over 5 years.
+  3. `get_financial_statement`: Annual or quarterly income statements, balance sheets, and cash flow statements (`income_stmt`, `quarterly_income_stmt`, `balance_sheet`, `quarterly_balance_sheet`, `cashflow`, `quarterly_cashflow`).
+  4. `get_recommendations`: Consensus analyst recommendation trends or firm upgrade/downgrade history within a configurable lookback window.
+- **ADK Classes & Concepts Learned**:
+  - `com.google.adk.tools.mcp.McpToolset`: Seamlessly consuming MCP servers as first-class ADK toolsets.
+  - `io.modelcontextprotocol.client.transport.ServerParameters`: Configuring subprocess execution for stdio transport.
+  - Dynamic Tool Discovery: Transforming runtime MCP schemas into client function declarations without compile-time coupling.
+  - Multi-Source Intelligence Triangulation: Orchestrating structured market data (Yahoo Finance MCP), current web news (`stockmarket_researcher` via Google Search), domain skills, project knowledge, and relational customer state.
+- **Architecture**:
+  ```
+                        Finance Advisor V5 (LlmAgent)
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         ▼                           ▼                           ▼
+    Domain Skills &             Google Search             Yahoo Finance MCP
+    Grounding Knowledge    (stockmarket_researcher)        (McpToolset / stdio)
+   (skills/ & knowledge/)     (Live news & events)               │
+         │                           │                           ▼
+         │                           │              mcp/yahoo-finance-mcp.jar
+         │                           │                           │
+         │                           │                           ▼
+         │                           │                  Yahoo Finance APIs
+         └───────────────────────────┼───────────────────────────┘
+                                     ▼
+                               Gemini / Gemma
+                                     │
+                                     ▼
+                       Institutional Decision-Support
+  ```
+- **Takeaway**: Provide institutional-grade financial data tools to agents without rewriting custom API integrations by consuming standards-compliant MCP servers via Google ADK Java.
 
 ---
 
 ### Week 3 — Version 6: Specialist Multi-Agent System (`finance.v6`)
 - **Package**: `com.google.adk.finance.v6`
 - **Specialist Roles**:
-  1. `market_researcher`: Queries Google Search and Market MCP tools to identify why asset prices changed.
+  1. `stockmarket_researcher`: Queries Google Search and Market MCP tools to identify why asset prices changed.
   2. `scenario_analyst`: Models bull, bear, and baseline macro scenarios based on portfolio weights.
   3. `report_writer`: Synthesizes research and scenario findings into an executive decision-support report.
   4. `portfolio_director` (Root): Orchestrates the workflow, delegates to specialists, and conducts user alignment.
@@ -712,21 +746,25 @@ The application provides three complementary ways to run and test both Social Sp
 - **Use Case**: Connects to the Next.js CopilotKit frontend at `http://localhost:3000`.
 
 ### Mode 4: Dedicated Finance Milestone Consoles
-- **Finance Agent v1 Console**:
+- **Finance Advisor v1 Console**:
   - Class: [`FinanceConsoleV1.java`](src/main/java/com/google/adk/finance/v1/FinanceConsoleV1.java)
   - Launcher: `.\test-finance-v1.bat` (or Gradle: `.\gradlew.bat runFinanceV1 --console=plain -q`)
-- **Finance Agent v2 Console (State & Holdings)**:
+- **Finance Advisor v2 Console (State & Holdings)**:
   - Class: [`FinanceConsoleV2.java`](src/main/java/com/google/adk/finance/v2/FinanceConsoleV2.java)
   - Launcher: `.\test-finance-v2.bat` (or Gradle: `.\gradlew.bat runFinanceV2 --console=plain -q`)
   - Features: Multi-turn session state inspection (`state`), customer identification (`1001` or `1002`), SQLite queries, and contextual answers.
-- **Finance Agent v3 Console (Grounded Search & Math Tools)**:
+- **Finance Advisor v3 Console (Grounded Search & Math Tools)**:
   - Class: [`FinanceConsoleV3.java`](src/main/java/com/google/adk/finance/v3/FinanceConsoleV3.java)
   - Launcher: `.\test-finance-v3.bat` (or Gradle: `.\gradlew.bat runFinanceV3 --console=plain -q`)
-  - Features: Real-time Google Search grounding for earnings and analyst ratings, deterministic arithmetic via `PortfolioMathTool`, and portfolio database integration.
+  - Features: Real-time Google Search grounding for earnings and analyst ratings via `stockmarket_researcher`, deterministic arithmetic via `PortfolioMathTool`, and portfolio database integration.
 - **Finance Advisor v4 Console (Skills + Grounding Knowledge)**:
   - Class: [`FinanceConsoleV4.java`](src/main/java/com/google/adk/finance/v4/FinanceConsoleV4.java)
   - Launcher: `.\test-finance-v4.bat` (or Gradle: `.\gradlew.bat runFinanceV4 --console=plain -q`)
-  - Features: 6 domain skills in `skills/finance/`, 6 curated grounding documents in `knowledge/`, Google Search grounding via `market_researcher`, and explicit source transparency.
+  - Features: 6 domain skills in `skills/finance/`, 6 curated grounding documents in `knowledge/`, Google Search grounding via `stockmarket_researcher`, and explicit source transparency.
+- **Finance Advisor v5 Console (Yahoo Finance MCP Integration)**:
+  - Class: [`FinanceConsoleV5.java`](src/main/java/com/google/adk/finance/v5/FinanceConsoleV5.java)
+  - Launcher: `.\test-finance-v5.bat` (or Gradle: `.\gradlew.bat runFinanceV5 --console=plain -q`)
+  - Features: Model Context Protocol (MCP) toolset consumption over stdio, automated startup and shutdown of `mcp/yahoo-finance-mcp.jar`, 4 structured tools (`get_stock_info`, `get_stock_actions`, `get_financial_statement`, `get_recommendations`), Google Search (`stockmarket_researcher`), domain skills, grounding knowledge, SQLite portfolio context, and deterministic math.
 
 ---
 

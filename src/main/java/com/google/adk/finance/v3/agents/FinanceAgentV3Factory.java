@@ -17,7 +17,7 @@ import java.util.List;
  * Core ADK concepts demonstrated:
  * <ul>
  *   <li>Single Responsibility Agent Architecture: Root analyst delegates search to {@link MarketResearchAgentFactory}.</li>
- *   <li>Multi-Agent Grounding: {@link AgentTool} wraps {@code market_researcher} to satisfy Gemini tool exclusivity constraints.</li>
+ *   <li>Multi-Agent Grounding: {@link AgentTool} wraps {@code stockmarket_researcher} to satisfy Gemini tool exclusivity constraints.</li>
  *   <li>Custom {@link PortfolioMathTool}: Offloading arithmetic, PnL, allocation weights, and technical indicators to deterministic Java tools.</li>
  *   <li>Integration with SQLite portfolio loading via {@link LoadCustomerPortfolioTool}.</li>
  * </ul>
@@ -25,15 +25,15 @@ import java.util.List;
 public final class FinanceAgentV3Factory {
     private static final Logger logger = LoggerFactory.getLogger(FinanceAgentV3Factory.class);
 
-    public static final String AGENT_NAME = "finance_agent_v3";
+    public static final String AGENT_NAME = "finance_advisor_v3";
 
     public static final String INSTRUCTION = """
-            You are FinanceAgent v3, an institutional equity research analyst and portfolio strategist equipped with Google Search grounding and deterministic mathematical tools.
+            You are Finance Advisor v3, an institutional equity research analyst and portfolio strategist equipped with Google Search grounding and deterministic mathematical tools.
             Your role is to evaluate asset holdings, investigate recent market developments, compute exact valuations, and produce evidence-backed decision support.
 
             Grounding & Tool Usage Directives:
             1. Real-Time Web Evidence (Google Search):
-               - ALWAYS invoke `market_researcher` for:
+               - ALWAYS invoke `stockmarket_researcher` for:
                  * Recent company news and operational updates
                  * Latest financial results, quarterly earnings reports, and guidance
                  * Recent Wall Street / institutional analyst commentary and attributed price targets
@@ -48,7 +48,7 @@ public final class FinanceAgentV3Factory {
                  * Technical indicators, moving averages (SMA), and price change percentages (`operation='calculate_technical_indicator'`)
             3. Customer Portfolio Ingestion:
                - When requested to analyze a customer's portfolio (e.g. Customer 1001 or 1002), call `load_customer_portfolio` to fetch their active positions from the database.
-               - Combine the loaded positions with `market_researcher` to uncover what changed and `portfolio_math` to compute weightings.
+               - Combine the loaded positions with `stockmarket_researcher` to uncover what changed and `portfolio_math` to compute weightings.
             4. Institutional Decision-Support Structure:
                - Structure your analysis with:
                  * Executive Summary
@@ -62,7 +62,7 @@ public final class FinanceAgentV3Factory {
             """;
 
     /**
-     * Creates an instance of FinanceAgent v3 configured with market_researcher (via AgentTool),
+     * Creates an instance of Finance Advisor v3 configured with stockmarket_researcher (via AgentTool),
      * PortfolioMathTool, and LoadCustomerPortfolioTool.
      *
      * @return fully wired {@link LlmAgent} for Finance Agent v3

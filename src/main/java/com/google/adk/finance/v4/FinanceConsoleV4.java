@@ -23,7 +23,7 @@ import java.util.UUID;
  * <ul>
  *   <li>On-demand Skill loading via {@code load_skill} (Finance Fundamentals, Valuation, Risk, Portfolio, etc.).</li>
  *   <li>Curated Project Grounding Knowledge retrieval via {@code read_project_knowledge}.</li>
- *   <li>Live Google Search grounding via {@code market_researcher} when current news is needed.</li>
+ *   <li>Live Google Search grounding via {@code stockmarket_researcher} when current news is needed.</li>
  *   <li>Source attribution transparency distinguishing Project Knowledge, Current Search Data, and Analytical Reasoning.</li>
  * </ul>
  */
