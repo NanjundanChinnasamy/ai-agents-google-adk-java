@@ -83,6 +83,10 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Dynamic Prompt Templating**: Embeds `{customer_id?}`, `{portfolio_id?}`, and `{portfolio_holdings?}` placeholders into agent instructions.
   - **Multi-Turn State Preservation**: Asks for Customer ID once, retrieves portfolio from SQLite, and retains state across turns to answer inquiries directly without re-querying.
   - **Regulatory Compliance Guardrail**: Automatically appends mandatory institutional disclaimers.
+- **Week 2 — Version 3 (`finance.v3`)**:
+  - **Google Search Grounding**: Live factual retrieval for recent company news, quarterly earnings, analyst consensus/targets, corporate disclosures, and macro catalysts.
+  - **Deterministic Java Math Tool (`PortfolioMathTool`)**: Offloads arithmetic from LLM to Java for exact calculations: PnL, cost basis, return %, portfolio allocation weights, concentration risk flags (>25%), and technical indicators (SMA).
+  - **Grounded Decision-Support Synthesis**: Merges real-time web evidence with exact mathematical metrics, concluding with mandatory regulatory disclaimers.
 
 ---
 
@@ -99,6 +103,7 @@ ai-agents-google-adk-java/
 ├── test-agent.bat / .sh       # Direct CLI agent test console (Social Spark & Finance)
 ├── test-finance-v1.bat / .sh  # Dedicated CLI runner for Finance Agent v1
 ├── test-finance-v2.bat / .sh  # Dedicated CLI runner for Finance Agent v2
+├── test-finance-v3.bat / .sh  # Dedicated CLI runner for Finance Agent v3
 ├── .env.example               # Environment variables template
 ├── skills/                    # Agent Skills (brand-voice, platform-style, etc.)
 ├── mcp/                       # Local MCP servers (linkedin_server.py)
@@ -134,12 +139,19 @@ ai-agents-google-adk-java/
     │   │       │   ├── FinanceAgentV1Factory.java     # LlmAgent factory & instruction engineering
     │   │       │   └── FinanceConsoleV1.java          # Dedicated interactive CLI console
     │   │       │
-    │   │       └── v2/                                # Week 1: Context & Holdings State Management
-    │   │           ├── PortfolioModels.java           # Customer & holding domain records
-    │   │           ├── CustomerPortfolioRepository.java # SQLite DAO with WAL mode & auto-seed
-    │   │           ├── LoadCustomerPortfolioTool.java # BaseTool injecting state via ToolContext
-    │   │           ├── FinanceAgentV2Factory.java     # Agent factory with dynamic prompt templates
-    │   │           └── FinanceConsoleV2.java          # Multi-turn stateful CLI console
+    │   │       ├── v2/                                # Week 1: Context & Holdings State Management
+    │   │       │   ├── PortfolioModels.java           # Customer & holding domain records
+    │   │       │   ├── CustomerPortfolioRepository.java # SQLite DAO with WAL mode & auto-seed
+    │   │       │   ├── LoadCustomerPortfolioTool.java # BaseTool injecting state via ToolContext
+    │   │       │   ├── FinanceAgentV2Factory.java     # Agent factory with dynamic prompt templates
+    │   │       │   └── FinanceConsoleV2.java          # Multi-turn stateful CLI console
+    │   │       │
+    │   │       └── v3/                                # Week 2: Java Tools & Grounded Google Search
+    │   │           ├── agents/
+    │   │           │   ├── FinanceAgentV3Factory.java         # Root decision-support agent
+    │   │           │   └── MarketResearchAgentFactory.java    # Isolated GoogleSearchTool agent
+    │   │           ├── PortfolioMathTool.java                 # BaseTool for PnL, allocation & SMA math
+    │   │           └── FinanceConsoleV3.java                  # Interactive search & math CLI console
     │   │
     │   └── resources/logback.xml                      # Logging configuration
     │
@@ -152,10 +164,13 @@ ai-agents-google-adk-java/
             └── finance/                               # Finance Agent test suite
                 ├── v1/
                 │   └── FinanceV1IntegrationTest.java
-                └── v2/
-                    ├── CustomerPortfolioRepositoryTest.java
-                    ├── LoadCustomerPortfolioToolTest.java
-                    └── FinanceV2IntegrationTest.java
+                ├── v2/
+                │   ├── CustomerPortfolioRepositoryTest.java
+                │   ├── LoadCustomerPortfolioToolTest.java
+                │   └── FinanceV2IntegrationTest.java
+                └── v3/
+                    ├── PortfolioMathToolTest.java
+                    └── FinanceV3IntegrationTest.java
 ```
 
 ---
@@ -230,8 +245,9 @@ Navigate directly to:
   - `research_agent`: Test the Google Search grounding specialist.
   - `finance_agent_v1`: Test the foundational financial analyst for asset allocations, valuation metrics, and macro drivers.
   - `finance_agent_v2`: Test the state-managed portfolio analyst with SQLite holdings persistence and `load_customer_portfolio` tool.
-- **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`) and registered tools.
-- **Tool Inspection**: Click on any executed tool chip (e.g. `google_search`, `read_skill_content`, `load_customer_portfolio`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
+  - `finance_agent_v3`: Test the grounded research and valuation analyst with live `market_researcher` (`GoogleSearchTool.INSTANCE`) web grounding and deterministic `PortfolioMathTool` calculations.
+- **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`, `market_researcher`) and registered tools.
+- **Tool Inspection**: Click on any executed tool chip (e.g. `market_researcher`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
 - **Session Management**: Create new sessions via `+ New Session` or inspect past event steps sequentially (`Event 1 of N`, `Request`, `Response`).
 
 ---
@@ -274,6 +290,11 @@ Once inside the prompt (`User > `):
   User > finance_v2 Can you review my portfolio?
   ```
   Runs the state-managed portfolio analyst, prompts for customer ID, loads SQLite holdings, and maintains session context.
+- **Test `finance_agent_v3` directly**:
+  ```text
+  User > finance_v3 Search recent news for Reliance and calculate PnL for 2 shares bought at 1000 INR with current price 1300 INR
+  ```
+  Runs the grounded analyst combining live Google Search news retrieval with deterministic math calculations.
 - **Inspect Session State**:
   ```text
   User > state
@@ -298,6 +319,9 @@ You can also run one-off prompts directly without entering the interactive loop:
 
 # Test finance agent v2
 .\test-agent.bat "finance_v2 Review my portfolio"
+
+# Test finance agent v3
+.\test-agent.bat "finance_v3 Search recent earnings results for TCS"
 ```
 
 ---
@@ -371,6 +395,36 @@ Run the stateful portfolio analyst with SQLite persistence, custom tool executio
 1. **Turn 1**: *"Can you review my portfolio?"* -> Agent detects missing context and asks for Customer ID (`1001` or `1002`).
 2. **Turn 2**: *"My customer ID is 1001"* -> Agent calls `load_customer_portfolio` tool, queries SQLite, populates session state, and displays Reliance & TCS positions.
 3. **Turn 3**: *"What is my total invested capital?"* -> Agent answers directly from session state context without re-querying SQLite or prompting for customer ID.
+
+#### Week 2 — Version 3: Java Tools & Grounded Google Search (`finance.v3`)
+Run the grounded market research and portfolio valuation analyst combining live web search grounding with deterministic math calculations:
+```bash
+# Windows
+.\test-finance-v3.bat
+
+# macOS / Linux
+./test-finance-v3.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV3 --console=plain -q
+
+# One-shot query:
+.\test-finance-v3.bat "Customer 1001 holds Reliance and TCS. Search recent news for both and calculate PnL assuming current prices."
+```
+
+**Key Capabilities & Tool Responsibilities:**
+- **Google Search Grounding (`market_researcher` via `GoogleSearchTool.INSTANCE`)**:
+  - Recent company news and developments
+  - Latest quarterly earnings reports and revenue growth
+  - Analyst consensus ratings and price targets
+  - Official regulatory and corporate filings
+  - Macroeconomic and interest rate market events
+- **Deterministic Math Tool (`PortfolioMathTool`)**:
+  - `calculate_pnl`: Cost basis, current market value, unrealized profit/loss, return percentage
+  - `calculate_allocation`: Weightings (%) across holdings and concentration risk alerts (>25%)
+  - `calculate_technical_indicator`: Simple Moving Average (SMA), spread, price change
+- **SQLite Customer Portfolio Ingestion (`LoadCustomerPortfolioTool`)**:
+  - Automatically loads and formats holdings directly from SQLite database into session state context.
 
 ---
 

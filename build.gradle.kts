@@ -94,3 +94,11 @@ tasks.register<JavaExec>("runFinanceV2") {
     mainClass.set("com.google.adk.finance.v2.FinanceConsoleV2")
     standardInput = System.`in`
 }
+
+tasks.register<JavaExec>("runFinanceV3") {
+    group = "application"
+    description = "Run interactive direct CLI tester for Finance Agent v3"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v3.FinanceConsoleV3")
+    standardInput = System.`in`
+}

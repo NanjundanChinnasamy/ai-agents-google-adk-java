@@ -183,30 +183,51 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 ### Week 2 — Version 3: Java Tools & Grounded Google Search (`finance.v3`)
 - **Package**: `com.google.adk.finance.v3`
 - **Core Files**:
-  - `PortfolioMathTool.java`: Extends `com.google.adk.tools.BaseTool` for deterministic arithmetic.
-  - `FinanceAgentV3Factory.java`: Combines math tools and `GoogleSearchTool.INSTANCE`.
-- **ADK Classes Learned**:
-  - `com.google.adk.tools.BaseTool`
-  - `com.google.genai.types.FunctionDeclaration`
-  - `com.google.genai.types.Schema`
-  - `com.google.adk.tools.GoogleSearchTool`
+  - [`PortfolioMathTool.java`](src/main/java/com/google/adk/finance/v3/PortfolioMathTool.java): Custom `BaseTool` for deterministic PnL, allocation weights, concentration risk, and technical indicators.
+  - [`FinanceAgentV3Factory.java`](src/main/java/com/google/adk/finance/v3/agents/FinanceAgentV3Factory.java): Root agent factory in `v3.agents` coordinating market research, deterministic math, and portfolio ingestion.
+  - [`MarketResearchAgentFactory.java`](src/main/java/com/google/adk/finance/v3/agents/MarketResearchAgentFactory.java): Decoupled atomic agent factory in `v3.agents` adhering to SRP, isolating `GoogleSearchTool.INSTANCE` within `market_researcher`.
+  - [`FinanceConsoleV3.java`](src/main/java/com/google/adk/finance/v3/FinanceConsoleV3.java): Interactive terminal console showcasing real-time tool inspection and search grounding.
+  - [`PortfolioMathToolTest.java`](src/test/java/com/google/adk/finance/v3/PortfolioMathToolTest.java): Unit tests verifying math calculation accuracy.
+  - [`FinanceV3IntegrationTest.java`](src/test/java/com/google/adk/finance/v3/FinanceV3IntegrationTest.java): Integration tests verifying atomic agent bindings, tool registrations, and agent execution.
+- **ADK Classes & Concepts Learned**:
+  - `com.google.adk.tools.GoogleSearchTool`: Grounding responses with live web search results (news, earnings, analyst commentary, filings).
+  - `com.google.adk.tools.AgentTool`: Wrapping an isolated search agent (`market_researcher`) to satisfy Gemini's API constraint (which prohibits mixing native search tools and client function declarations in the same generation step).
+  - Custom `com.google.adk.tools.BaseTool`: Offloading arithmetic and technical indicators to deterministic Java code to avoid LLM hallucinations.
+  - Multi-tool binding: Combining web search grounding, deterministic math, and relational database loading in a single agent.
+- **Capability Matrix: Google Search Grounding vs. Java Tools**:
+
+| Analytical Capability | Google Search? | Tool / Method | Rationale |
+|---|:---:|---|---|
+| **Recent Company News** | ✅ Excellent | `market_researcher` | Real-time news retrieval, press releases, operational changes |
+| **Latest Results & Earnings** | ✅ Excellent | `market_researcher` | Quarterly SEC filings, revenue/EPS metrics, earnings calls |
+| **Recent Analyst Commentary** | ✅ Yes | `market_researcher` | Consensus ratings, price targets, upgrades/downgrades |
+| **Official Company Announcements** | ✅ Excellent | `market_researcher` | Corporate governance, regulatory disclosures, buybacks |
+| **Market & Macro Events** | ✅ Excellent | `market_researcher` | Interest rate hikes, inflation reports, geopolitical events, M&A |
+| **Historical Price & Return Calculation** | ⚠️ Not Search | `portfolio_math` (`calculate_pnl`) | Deterministic arithmetic: Cost Basis, Current Valuation, PnL, Return % |
+| **Portfolio Allocation & Concentration** | ❌ Not Search | `portfolio_math` (`calculate_allocation`) | Asset weights (%) and single-stock concentration risk flags (>25%) |
+| **Technical Indicators** | ❌ Not Search | `portfolio_math` (`calculate_technical_indicator`) | Simple Moving Average (SMA), price range spread, percentage change |
+| **Synthesized Recommendations** | ❌ Not Search | Agent Synthesis | Multi-source grounded reasoning (bull/bear trade-offs, catalysts) |
+| **Execute a Trade** | ❌ Separate | Human Approval Gate | Strictly prohibited without controlled trading tools and user consent |
+
 - **Architecture**:
   ```
-                        +───────────────────────────+
-                        |      FinanceAgentV3       |
-                        +─────────────┬─────────────+
-                                      │
-                 ┌────────────────────┴────────────────────┐
-                 ▼                                         ▼
-  +─────────────────────────────+           +─────────────────────────────+
-  |      PortfolioMathTool      |           |    GoogleSearchTool.INSTANCE|
-  | Deterministic Calculations: |           | Real-time Web Grounding:    |
-  | - Weightings & Sector Drift |           | - "NVDA Q3 earnings beat"   |
-  | - Cost basis & Unrealized PnL|          | - "10Y Treasury yield shift"|
-  | - Concentration risk ratio  |           | - Output: Search snippets   |
-  +─────────────────────────────+           +─────────────────────────────+
+                                +─────────────────────────────────────────+
+                                |             FinanceAgentV3              |
+                                |       Model: gemini-2.5-flash           |
+                                +────────────────────┬────────────────────+
+                                                     │
+                   ┌─────────────────────────────────┼─────────────────────────────────┐
+                   ▼                                 ▼                                 ▼
+    +─────────────────────────────+   +─────────────────────────────+   +─────────────────────────────+
+    |  AgentTool(market_research) |   |      PortfolioMathTool      |   |  LoadCustomerPortfolioTool  |
+    | Isolated Search Agent:      |   | Deterministic Math:         |   | Relational DB Ingestion:    |
+    | - GoogleSearchTool.INSTANCE |   | - PnL & Cost Basis          |   | - Customer 1001 (RELIANCE)  |
+    | - Live news & Q3 earnings   |   | - Allocation Weights (%)    |   | - Customer 1002 (INFY)      |
+    | - Analyst ratings & targets |   | - Concentration Risk (>25%) |   | - Persistent Session State  |
+    | - Macro & market events     |   | - Technical Indicators (SMA)|   | Output: Holding records     |
+    +─────────────────────────────+   +─────────────────────────────+   +─────────────────────────────+
   ```
-- **Rule**: Never permit the LLM to perform arithmetic on financial figures. Offload all calculations to `PortfolioMathTool`.
+- **Rule**: Never permit the LLM to perform arithmetic on financial figures. Offload all calculations to `PortfolioMathTool`. Always cite search sources and conclude with the mandatory regulatory disclaimer.
 
 ---
 
@@ -527,7 +548,11 @@ ai-agents-google-adk-java/
     │   │       │   └── FinanceAgentV2Factory.java
     │   │       │
     │   │       ├── v3/                            # Week 2: Java Tools + Grounded Google Search
-    │   │       │   └── FinanceAgentV3Factory.java
+    │   │       │   ├── agents/
+    │   │       │   │   ├── FinanceAgentV3Factory.java       # Root decision-support agent
+    │   │       │   │   └── MarketResearchAgentFactory.java  # Isolated GoogleSearchTool agent
+    │   │       │   ├── PortfolioMathTool.java               # Deterministic arithmetic BaseTool
+    │   │       │   └── FinanceConsoleV3.java                # Dedicated interactive CLI
     │   │       │
     │   │       ├── v4/                            # Week 2: Dynamic Skills & Domain Playbooks
     │   │       │   └── FinanceAgentV4Factory.java
@@ -623,6 +648,10 @@ The application provides three complementary ways to run and test both Social Sp
   - Class: [`FinanceConsoleV2.java`](src/main/java/com/google/adk/finance/v2/FinanceConsoleV2.java)
   - Launcher: `.\test-finance-v2.bat` (or Gradle: `.\gradlew.bat runFinanceV2 --console=plain -q`)
   - Features: Multi-turn session state inspection (`state`), customer identification (`1001` or `1002`), SQLite queries, and contextual answers.
+- **Finance Agent v3 Console (Grounded Search & Math Tools)**:
+  - Class: [`FinanceConsoleV3.java`](src/main/java/com/google/adk/finance/v3/FinanceConsoleV3.java)
+  - Launcher: `.\test-finance-v3.bat` (or Gradle: `.\gradlew.bat runFinanceV3 --console=plain -q`)
+  - Features: Real-time Google Search grounding for earnings and analyst ratings, deterministic arithmetic via `PortfolioMathTool`, and portfolio database integration.
 
 ---
 
