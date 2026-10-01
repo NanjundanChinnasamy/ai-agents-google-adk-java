@@ -136,6 +136,14 @@ public final class AgentConsoleRunner {
                 continue;
             }
 
+            if (input.toLowerCase().startsWith("finance_v7 ") || input.toLowerCase().startsWith("finance_advisor_v7 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v7 ") ? "finance_v7 ".length() : "finance_advisor_v7 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v7 directly...]");
+                testFinanceV7Directly(financePrompt);
+                continue;
+            }
+
             if (input.isEmpty()) {
                 continue;
             }
@@ -483,6 +491,45 @@ public final class AgentConsoleRunner {
         }
     }
 
+    private static void testFinanceV7Directly(String prompt) {
+        try (YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager()) {
+            mcpManager.start();
+            LlmAgent agent = com.google.adk.finance.v7.FinanceAdvisorAgentV7.createFinanceAdvisorAgentV7(mcpManager.getMcpToolset());
+            Runner runner = new InMemoryRunner(agent, com.google.adk.finance.v7.FinanceAdvisorAgentV7.AGENT_NAME);
+            Content userContent = Content.builder()
+                    .role("user")
+                    .parts(List.of(Part.fromText(prompt)))
+                    .build();
+
+            Flowable<Event> flow = runner.runAsync(
+                    "cli-tester",
+                    "finance-v7-cli",
+                    userContent,
+                    RunConfig.builder().build(),
+                    new HashMap<>()
+            );
+
+            System.out.print("\nFinance Advisor v7 > ");
+            flow.blockingForEach(event -> {
+                if (event.content().isPresent()) {
+                    for (Part p : event.content().get().parts().orElse(List.of())) {
+                        p.functionCall().ifPresent(fc ->
+                                System.out.println("\n[Workflow / Tool Call] -> " + fc.name() + "(" + fc.args() + ")")
+                        );
+                        p.functionResponse().ifPresent(fr ->
+                                System.out.println("[Workflow Response] <- " + fr.name() + " returned.")
+                        );
+                        p.text().ifPresent(System.out::print);
+                    }
+                }
+            });
+            System.out.println();
+        } catch (Exception e) {
+            System.err.println("\n[Error running finance_advisor_v7]: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private static void runTurn(String prompt, Map<String, Object> state, boolean printOutput) {
         if (prompt.toLowerCase().startsWith("draft_only ")) {
             testDraftAgentDirectly(prompt.substring("draft_only ".length()).trim());
@@ -516,6 +563,11 @@ public final class AgentConsoleRunner {
         if (prompt.toLowerCase().startsWith("finance_v6 ") || prompt.toLowerCase().startsWith("finance_advisor_v6 ")) {
             int len = prompt.toLowerCase().startsWith("finance_v6 ") ? "finance_v6 ".length() : "finance_advisor_v6 ".length();
             testFinanceV6Directly(prompt.substring(len).trim());
+            return;
+        }
+        if (prompt.toLowerCase().startsWith("finance_v7 ") || prompt.toLowerCase().startsWith("finance_advisor_v7 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v7 ") ? "finance_v7 ".length() : "finance_advisor_v7 ".length();
+            testFinanceV7Directly(prompt.substring(len).trim());
             return;
         }
         Runner runner = new InMemoryRunner(SocialPosterAgentFactory.createRootAgent(), "social_poster");

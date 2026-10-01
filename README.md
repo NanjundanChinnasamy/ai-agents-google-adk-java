@@ -108,6 +108,13 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Standardized Output Contracts**: Structured sub-agent report format (`[SUB-AGENT REPORT: ...]`, Specialist, Task, Key Findings, Sources, Limitations).
   - **Failure Isolation & Graceful Degradation**: Survives specialist failures with clear limitation notices rather than failing the overall analysis.
   - **Reference Guide**: See [`docs/finance-agent-v6.md`](docs/finance-agent-v6.md) and [`v6/README.md`](v6/README.md).
+- **Week 4 — Version 7 (`finance.v7`)**:
+  - **Deterministic Workflow Orchestration**: Transitions from dynamic model-driven specialist delegation (V6) to code-governed, deterministic workflow structures:
+    1. **Sequential Workflow** (`InvestmentResearchSequentialWorkflowV7`): Built using `SequentialAgent`. Executes a linear 5-stage dependency chain: Company Research (`GoogleSearchTool.INSTANCE`) -> Fundamentals (Yahoo Finance MCP) -> Risk Analysis (Beta & Volatility) -> Valuation Analysis (Grounded Multiples) -> Synthesis Report (Institutional 7-section document with mandatory regulatory disclaimer). Context passes explicitly downstream via `outputKey` and `{outputKey}` prompt bindings.
+    2. **Parallel Workflow** (`PortfolioParallelResearchWorkflowV7`): Built using `ParallelAgent` and concurrent Java `CompletableFuture` execution engine. Features genuine non-blocking fan-out execution across multiple companies with real event logging (`[PARALLEL] Starting ...`, `[PARALLEL] ... completed`), followed by fan-in comparative synthesis. Demonstrates resilient partial failure handling (e.g. if one stock fails or encounters missing data, the comparative synthesis still produces the report without failing or hallucinating data).
+    3. **Iterative Critic Loop** (`ResearchCriticLoopWorkflowV7`): Built using `LoopAgent` with `maxIterations(3)` and dynamic loop termination governed by `ExitLoopTool.INSTANCE` (`exit_loop`). Iteratively routes drafts between an authoring agent (`ReportDraftingAgentV7`) and an independent compliance critic (`ComplianceEvidenceCriticAgentV7`). Loop exits only when empirical evidence citations, balanced risk coverage, and mandatory regulatory disclaimers pass audit.
+  - **Root Orchestrator (`workflow_director` / `FinanceAdvisorAgentV7`)**: Evaluates user inquiry intent, coordinates workflow selection, and triggers the appropriate deterministic workflow engine via dedicated tools (`run_sequential_research_workflow`, `run_parallel_portfolio_research_workflow`, `run_critic_loop_research_workflow`).
+  - **Reference Guide**: See [`docs/finance-agent-v7.md`](docs/finance-agent-v7.md) and [`v7/README.md`](v7/README.md).
 
 ---
 
@@ -128,14 +135,24 @@ ai-agents-google-adk-java/
 ├── test-finance-v4.bat / .sh  # Dedicated CLI runner for Finance Advisor v4
 ├── test-finance-v5.bat / .sh  # Dedicated CLI runner for Finance Advisor v5 (Yahoo Finance MCP)
 ├── test-finance-v6.bat / .sh  # Dedicated CLI runner for Finance Advisor v6 (Sub-Agents)
+├── test-finance-v7.bat / .sh  # Dedicated CLI runner for Finance Advisor v7 (Workflow Orchestration)
 ├── .env.example               # Environment variables template
 ├── docs/                      # Technical documentation and milestone references
 │   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
-│   └── finance-agent-v6.md    # Architecture and implementation guide for V6 Sub-Agents
+│   ├── finance-agent-v6.md    # Architecture and implementation guide for V6 Sub-Agents
+│   └── finance-agent-v7.md    # Architecture and implementation guide for V7 Workflows
 ├── v6/                        # Milestone V6 documentation and architectural references
 │   ├── README.md              # V6 overview & evolutionary comparison
 │   └── sub-agents/            # Specialized sub-agent architectural specifications
 │       └── README.md
+├── v7/                        # Milestone V7 documentation and workflow references
+│   ├── README.md              # V7 overview & deterministic orchestration guide
+│   ├── workflows/             # Workflow architecture specifications
+│   │   ├── sequential/README.md # Sequential pipeline specification
+│   │   ├── parallel/README.md   # Parallel fan-out/in & failure isolation specification
+│   │   └── loop/README.md       # Iterative critic loop & exit_loop specification
+│   ├── agents/README.md       # Root orchestrator specification
+│   └── sub-agents/README.md   # Catalog of 10 specialized V7 sub-agents
 ├── knowledge/                 # Curated finance domain grounding knowledge (glossary, valuation, risk, etc.)
 ├── skills/                    # Agent Skills (Social Spark & Finance Domain Skills)
 │   ├── brand-voice/           # Social Spark: Brand tone & British English rules
@@ -211,15 +228,37 @@ ai-agents-google-adk-java/
     │   │       │   ├── FinanceAdvisorAgentV5Factory.java      # Root advisor factory wiring MCP toolset & search
     │   │       │   └── FinanceConsoleV5.java                  # Interactive MCP console & tool execution tracing
     │   │       │
-    │   │       └── v6/                                # Week 3: Specialist Multi-Agent System
-    │   │           ├── FinanceAdvisorAgentV6.java             # Root orchestrator (portfolio_director)
-    │   │           ├── FinanceConsoleV6.java                  # Interactive CLI runner with delegation observability
-    │   │           └── subagents/                             # Specialized Sub-Agents (Narrow responsibilities)
-    │   │               ├── MarketResearchAgentV6.java         # stockmarket_researcher: Google Search & news attribution
-    │   │               ├── ScenarioAnalystAgentV6.java        # scenario_analyst: Bull/Bear macro stress-testing
-    │   │               ├── ReportWriterAgentV6.java           # report_writer: Synthesizes institutional decision report
-    │   │               ├── FundamentalAnalysisAgentV6.java    # fundamental_analysis_agent: Yahoo Finance MCP fundamentals
-    │   │               └── PortfolioRiskAgentV6.java          # portfolio_risk_agent: Volatility, beta, concentration & risk
+    │   │       ├── v6/                                # Week 3: Specialist Multi-Agent System
+    │   │       │   ├── FinanceAdvisorAgentV6.java             # Root orchestrator (portfolio_director)
+    │   │       │   ├── FinanceConsoleV6.java                  # Interactive CLI runner with delegation observability
+    │   │       │   └── subagents/                             # Specialized Sub-Agents (Narrow responsibilities)
+    │   │       │       ├── MarketResearchAgentV6.java         # stockmarket_researcher: Google Search & news attribution
+    │   │       │       ├── ScenarioAnalystAgentV6.java        # scenario_analyst: Bull/Bear macro stress-testing
+    │   │       │       ├── ReportWriterAgentV6.java           # report_writer: Synthesizes institutional decision report
+    │   │       │       ├── FundamentalAnalysisAgentV6.java    # fundamental_analysis_agent: Yahoo Finance MCP fundamentals
+    │   │       │       └── PortfolioRiskAgentV6.java          # portfolio_risk_agent: Volatility, beta, concentration & risk
+    │   │       │
+    │   │       └── v7/                                # Week 4: Workflow Orchestration
+    │   │           ├── FinanceAdvisorAgentV7.java             # Root orchestrator (workflow_director)
+    │   │           ├── FinanceConsoleV7.java                  # Interactive CLI runner for workflows
+    │   │           ├── workflows/                             # 3 Deterministic Workflow Engines
+    │   │           │   ├── sequential/
+    │   │           │   │   └── InvestmentResearchSequentialWorkflowV7.java # 5-Stage Sequential Pipeline (SequentialAgent)
+    │   │           │   ├── parallel/
+    │   │           │   │   └── PortfolioParallelResearchWorkflowV7.java    # Concurrent Fan-Out/In with failure isolation
+    │   │           │   └── loop/
+    │   │           │       └── ResearchCriticLoopWorkflowV7.java           # Iterative Critic Loop (LoopAgent + ExitLoopTool)
+    │   │           └── subagents/                             # 10 Specialized V7 Sub-Agents
+    │   │               ├── CompanyResearchAgentV7.java        # Stage 1: Google Search grounding
+    │   │               ├── FundamentalAnalysisAgentV7.java    # Stage 2: Yahoo Finance MCP fundamentals
+    │   │               ├── RiskAnalysisAgentV7.java           # Stage 3: Volatility, Beta & Leverage
+    │   │               ├── ValuationAnalysisAgentV7.java      # Stage 4: Grounded valuation multiples
+    │   │               ├── SequentialReportSynthesisAgentV7.java # Stage 5: Institutional 7-section report synthesis
+    │   │               ├── CompanyParallelResearchWorkerV7.java # Parallel worker for concurrent research
+    │   │               ├── ParallelPortfolioComparisonAgentV7.java # Fan-in comparison aggregator
+    │   │               ├── ReportDraftingAgentV7.java         # Author/reviser in iterative critic loop
+    │   │               ├── ComplianceEvidenceCriticAgentV7.java # Quality critic with ExitLoopTool
+    │   │               └── FinalReportPresenterAgentV7.java   # Final presenter of audited report
     │   │
     │   └── resources/logback.xml                      # Logging configuration
     │
@@ -249,8 +288,10 @@ ai-agents-google-adk-java/
                 │   └── FinanceV4IntegrationTest.java
                 ├── v5/
                 │   └── FinanceV5IntegrationTest.java
-                └── v6/
-                    └── FinanceV6IntegrationTest.java
+                ├── v6/
+                │   └── FinanceV6IntegrationTest.java
+                └── v7/
+                    └── FinanceV7IntegrationTest.java
 ```
 
 ---
@@ -641,6 +682,44 @@ Run the parent orchestrator advisor (`portfolio_director` / `FinanceAdvisorAgent
 - **Failure Isolation & Graceful Degradation**: Catches or observes specialist unavailability without crashing the overall advisory pipeline.
 - **Documentation**: See [`docs/finance-agent-v6.md`](docs/finance-agent-v6.md), [`v6/README.md`](v6/README.md), and [`v6/sub-agents/README.md`](v6/sub-agents/README.md).
 
+#### Week 4 — Version 7: Workflow Orchestration (`finance.v7`)
+Run the workflow director (`workflow_director` / `FinanceAdvisorAgentV7`) controlling 3 deterministic workflow engines:
+```bash
+# Windows
+.\test-finance-v7.bat
+
+# macOS / Linux
+./test-finance-v7.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV7 --console=plain -q
+
+# Direct workflow commands:
+# 1. Sequential 5-Stage Investment Research Pipeline:
+.\test-finance-v7.bat "sequential INFY"
+
+# 2. Parallel Fan-Out/In Multi-Company Research:
+.\test-finance-v7.bat "parallel INFY, TCS, RELIANCE"
+
+# 3. Parallel Research with Partial Failure Handling:
+.\test-finance-v7.bat "parallel-fail INFY, HDFCBANK"
+
+# 4. Iterative Research-Critic Loop with ExitLoopTool:
+.\test-finance-v7.bat "loop INFY"
+
+# Conversational queries routed through workflow director:
+.\test-finance-v7.bat "Prepare a structured investment research report on Infosys."
+.\test-finance-v7.bat "Analyse Infosys, HDFC Bank and Reliance and give me a comparable research summary."
+.\test-finance-v7.bat "Create an investment research report on Infosys and ensure important factual claims are supported by evidence."
+```
+
+**Key Architectural Features in V7:**
+- **Deterministic Workflow Orchestration**: Replaces model guessing with explicit code-governed execution pipelines.
+- **Sequential Pipeline (`InvestmentResearchSequentialWorkflowV7`)**: Built via `SequentialAgent` passing state downstream across 5 strict stages (Research -> Fundamentals -> Risk -> Valuation -> Synthesis).
+- **Parallel Fan-Out/In (`PortfolioParallelResearchWorkflowV7`)**: Non-blocking concurrent execution with real execution logging and partial failure handling that produces comparative reports even when individual stock lookups fail.
+- **Iterative Critic Loop (`ResearchCriticLoopWorkflowV7`)**: Authoring and auditing loop with `LoopAgent` and `ExitLoopTool.INSTANCE` (`exit_loop`), validating evidence grounding, risk balance, and regulatory compliance.
+- **Documentation**: See [`docs/finance-agent-v7.md`](docs/finance-agent-v7.md), [`v7/README.md`](v7/README.md), [`v7/workflows/sequential/README.md`](v7/workflows/sequential/README.md), [`v7/workflows/parallel/README.md`](v7/workflows/parallel/README.md), [`v7/workflows/loop/README.md`](v7/workflows/loop/README.md), and [`v7/sub-agents/README.md`](v7/sub-agents/README.md).
+
 ---
 
 ### 5. Model Context Protocol (MCP) Server: Yahoo Finance (Java)
@@ -689,6 +768,9 @@ See [`mcp/README.md`](mcp/README.md) for full configuration blocks for Claude De
 
 # Run only Finance Advisor V6 integration tests:
 ./gradlew test --tests com.google.adk.finance.v6.*
+
+# Run only Finance Advisor V7 integration tests:
+./gradlew test --tests com.google.adk.finance.v7.*
 ```
 
 

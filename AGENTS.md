@@ -413,33 +413,163 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 ---
 
 ### Week 4 — Version 7: Advanced Orchestration Workflows (`finance.v7`)
-- **Package**: `com.google.adk.finance.v7`
-- **Workflow Patterns**:
-  - **Sequential Pipeline**: Ingest Portfolio -> Research Attribution -> Simulate Scenarios -> Generate Report.
-  - **Parallel Fan-Out/Fan-In**: Concurrent research across multiple portfolio holdings using RxJava `Flowable.merge` or Reactor `Flux`.
-  - **Iterative Feedback Loop**: A `compliance_critic` agent reviews the initial draft and requests revisions until all assertions are backed by cited evidence.
-- **Architecture**:
-  ```
-  [User Request] ──> [Portfolio Director]
-                             │
-            ┌────────────────┴────────────────┐
-            ▼ (Parallel Fan-Out)              ▼
-    [Research Asset A]                 [Research Asset B]
-            │                                 │
-            └────────────────┬────────────────┘
-                             ▼ (Fan-In)
-                    [Scenario Analyst]
-                             │
-                             ▼
-                     [Report Writer]
-                             │
-                             ▼
-                    [Compliance Critic] ──(Pass)──> [Final Report Output]
-                             │
-                       (Needs Cites)
-                             │
-                             └───> [Revise Draft Loop]
-  ```
+- **Package**: `com.google.adk.finance.v7` and sub-packages (`workflows.sequential`, `workflows.parallel`, `workflows.loop`, `subagents`)
+- **Documentation**: See comprehensive guides in [`docs/finance-agent-v7.md`](docs/finance-agent-v7.md), [`v7/README.md`](v7/README.md), [`v7/workflows/sequential/README.md`](v7/workflows/sequential/README.md), [`v7/workflows/parallel/README.md`](v7/workflows/parallel/README.md), [`v7/workflows/loop/README.md`](v7/workflows/loop/README.md), [`v7/sub-agents/README.md`](v7/sub-agents/README.md), and [`v7/agents/README.md`](v7/agents/README.md).
+- **Core Files**:
+  - [`FinanceAdvisorAgentV7.java`](src/main/java/com/google/adk/finance/v7/FinanceAdvisorAgentV7.java): Root orchestrator (`workflow_director` / `finance_advisor_v7`) exposing 3 workflow invocation tools (`run_sequential_research_workflow`, `run_parallel_portfolio_research_workflow`, `run_critic_loop_research_workflow`), SQLite portfolio loader, and math calculation tools.
+  - [`FinanceConsoleV7.java`](src/main/java/com/google/adk/finance/v7/FinanceConsoleV7.java): Dedicated interactive CLI terminal runner supporting workflow shortcut commands (`sequential <ticker>`, `parallel <tickers>`, `parallel-fail <tickers>`, `loop <ticker>`), session state inspection, and graceful JVM shutdown hooks.
+  - [`InvestmentResearchSequentialWorkflowV7.java`](src/main/java/com/google/adk/finance/v7/workflows/sequential/InvestmentResearchSequentialWorkflowV7.java): Deterministic 5-stage pipeline executing research, fundamentals, risk, valuation, and synthesis in strict chronological order with explicit `outputKey` chaining.
+  - [`PortfolioParallelResearchWorkflowV7.java`](src/main/java/com/google/adk/finance/v7/workflows/parallel/PortfolioParallelResearchWorkflowV7.java): Concurrent fan-out/fan-in engine executing multi-ticker company research in parallel using `CompletableFuture`, logging real asynchronous events, tolerating partial failures, and synthesizing comparative insights without data fabrication.
+  - [`ResearchCriticLoopWorkflowV7.java`](src/main/java/com/google/adk/finance/v7/workflows/loop/ResearchCriticLoopWorkflowV7.java): Iterative author-critic feedback loop combining `ReportDraftingAgentV7` and `ComplianceEvidenceCriticAgentV7` inside a native ADK `LoopAgent` bounded by `maxIterations(3)` and controlled via `ExitLoopTool.INSTANCE`.
+  - **The 10 Specialized Sub-Agents** ([`src/main/java/com/google/adk/finance/v7/subagents/`](src/main/java/com/google/adk/finance/v7/subagents/)):
+    - [`CompanyResearchAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/CompanyResearchAgentV7.java): Sequential Stage 1 specialist (`company_research_agent_v7`) executing live web search via `GoogleSearchTool.INSTANCE`.
+    - [`FundamentalAnalysisAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/FundamentalAnalysisAgentV7.java): Sequential Stage 2 specialist (`fundamental_analysis_agent_v7`) querying Yahoo Finance MCP for financial statements, revenues, and operating margins.
+    - [`RiskAnalysisAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/RiskAnalysisAgentV7.java): Sequential Stage 3 specialist (`risk_analysis_agent_v7`) assessing systematic beta, volatility, capital structure, and operational risks.
+    - [`ValuationAnalysisAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/ValuationAnalysisAgentV7.java): Sequential Stage 4 specialist (`valuation_analysis_agent_v7`) evaluating valuation multiples (P/E, forward P/E, PEG, EV/EBITDA) with strict anti-hallucination constraints.
+    - [`SequentialReportSynthesisAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/SequentialReportSynthesisAgentV7.java): Sequential Stage 5 synthesis specialist (`sequential_synthesis_agent_v7`) assembling all upstream stages into an institutional 7-section report.
+    - [`CompanyParallelResearchWorkerV7.java`](src/main/java/com/google/adk/finance/v7/subagents/CompanyParallelResearchWorkerV7.java): Autonomous concurrent worker (`company_parallel_worker_v7`) combining live news, Yahoo Finance fundamentals, and risk analysis for a single ticker.
+    - [`ParallelPortfolioComparisonAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/ParallelPortfolioComparisonAgentV7.java): Fan-in synthesis specialist (`parallel_comparison_agent_v7`) creating structured comparative matrices, highlighting failed/missing tickers, and noting data limitations.
+    - [`ReportDraftingAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/ReportDraftingAgentV7.java): Iterative author specialist (`report_drafting_agent_v7`) drafting initial reports and revising drafts based on critic feedback.
+    - [`ComplianceEvidenceCriticAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/ComplianceEvidenceCriticAgentV7.java): Iterative compliance specialist (`compliance_evidence_critic_agent_v7`) auditing empirical claims, requiring citations, providing revision instructions, and terminating the loop via `ExitLoopTool.INSTANCE`.
+    - [`FinalReportPresenterAgentV7.java`](src/main/java/com/google/adk/finance/v7/subagents/FinalReportPresenterAgentV7.java): Post-loop presentation specialist (`final_report_presenter_agent_v7`) appending the compliance audit seal and disclaimers.
+  - [`FinanceV7IntegrationTest.java`](src/test/java/com/google/adk/finance/v7/FinanceV7IntegrationTest.java): Comprehensive integration test suite validating sequential chaining, parallel concurrency, partial failure resilience, critic loop termination, and root agent delegation.
+- **Core Paradigm Shift: Dynamic Delegation (V6) vs. Deterministic Orchestration (V7)**:
+
+| Dimension | Version 6: Dynamic Sub-Agent Delegation | Version 7: Deterministic Workflow Orchestration |
+|---|---|---|
+| **Control Flow Authority** | The root LLM dynamically decides at runtime whether, when, and which sub-agent to invoke. | Hardened Java workflows explicitly govern execution sequences, concurrency, and termination conditions. |
+| **Execution Order** | Non-deterministic; the parent LLM might skip specialists or call them in varying order. | Deterministic; guaranteed execution sequence (e.g. Stage 1 -> Stage 2 -> Stage 3 -> Stage 4 -> Stage 5). |
+| **Concurrency** | Sequential LLM function-calling turns; cannot guarantee concurrent execution of independent tasks. | Native parallel fan-out via `CompletableFuture` / `ParallelAgent`; simultaneous execution with bounded latency. |
+| **Quality Control & Feedback** | Single-pass generation; no formal automated audit gate before returning results to user. | Iterative loop via `LoopAgent` + `ComplianceEvidenceCriticAgentV7` with `ExitLoopTool` approval gating. |
+| **Failure Handling** | Ad-hoc LLM error recovery if a sub-agent tool call fails. | Structured partial failure resilience; fan-in synthesis receives audit logs and reports limitations transparently. |
+
+- **ADK Classes & Concepts Learned**:
+  - `com.google.adk.agents.SequentialAgent`: Constructing multi-step pipelines where each step's output is recorded into session state under a dedicated `outputKey` (`stage1_company_research`, `stage2_fundamental_analysis`, etc.) and automatically injected into subsequent steps' prompt templates (`{stage1_company_research?}`).
+  - `com.google.adk.agents.ParallelAgent`: Executing independent specialist agents across parallel branches and merging branch outputs.
+  - `com.google.adk.agents.LoopAgent`: Constructing cyclic agent workflows with configurable iteration caps (`maxIterations(3)`) to prevent runaway infinite loops.
+  - `com.google.adk.tools.ExitLoopTool`: Official ADK control tool (`ExitLoopTool.INSTANCE` / `exit_loop`) allowing a designated evaluator agent to break out of a `LoopAgent` early upon meeting criteria.
+  - **Hybrid Composition (Workflows as Tools)**: Encapsulating end-to-end workflow execution logic into deterministic custom `BaseTool` instances (`run_sequential_research_workflow`, `run_parallel_portfolio_research_workflow`, `run_critic_loop_research_workflow`) exposed to the root `FinanceAdvisorAgentV7`.
+  - **Asynchronous Fan-Out / Fan-In with Java Concurrency**: Coordinating parallel agent runners across virtual or platform worker threads with real timestamped logging and resilient error boundaries.
+
+---
+
+#### Workflow 1: Sequential Investment Research Pipeline (`InvestmentResearchSequentialWorkflowV7`)
+```
+User Request: "Prepare a structured investment research report on Infosys."
+                              │
+                              ▼
+  +─────────────────────────────────────────────────────────────+
+  | Stage 1: Company Research (CompanyResearchAgentV7)           |
+  | - Grounded Google Search (GoogleSearchTool.INSTANCE)        |
+  | - Output Key: stage1_company_research                       |
+  +─────────────────────────────┬───────────────────────────────+
+                                │
+                                ▼
+  +─────────────────────────────────────────────────────────────+
+  | Stage 2: Fundamental Analysis (FundamentalAnalysisAgentV7)   |
+  | - Yahoo Finance MCP (Revenue, Margins, Financial Statements)|
+  | - Input: {stage1_company_research?}                         |
+  | - Output Key: stage2_fundamental_analysis                   |
+  +─────────────────────────────┬───────────────────────────────+
+                                │
+                                ▼
+  +─────────────────────────────────────────────────────────────+
+  | Stage 3: Risk Analysis (RiskAnalysisAgentV7)                |
+  | - Market Beta, 52-Week Range, Leverage & Operational Risks  |
+  | - Input: {stage1_company_research?}, {stage2_fundamental...}|
+  | - Output Key: stage3_risk_analysis                          |
+  +─────────────────────────────┬───────────────────────────────+
+                                │
+                                ▼
+  +─────────────────────────────────────────────────────────────+
+  | Stage 4: Valuation Analysis (ValuationAnalysisAgentV7)       |
+  | - Multiples (P/E, Forward P/E, PEG, EV/EBITDA); No Guesses  |
+  | - Input: Upstream findings from Stages 1-3                  |
+  | - Output Key: stage4_valuation_analysis                     |
+  +─────────────────────────────┬───────────────────────────────+
+                                │
+                                ▼
+  +─────────────────────────────────────────────────────────────+
+  | Stage 5: Synthesis (SequentialReportSynthesisAgentV7)        |
+  | - Synthesizes 7-Section Institutional Research Report        |
+  | - Output Key: stage5_synthesis_report                       |
+  +─────────────────────────────────────────────────────────────+
+```
+
+---
+
+#### Workflow 2: Parallel Portfolio Research & Comparison (`PortfolioParallelResearchWorkflowV7`)
+```
+User Request: "Analyse Infosys, HDFC Bank and Reliance and give me a comparable research summary."
+                                    │
+                                    ▼
+                         [Fan-Out Dispatcher]
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │ (Thread 1)              │ (Thread 2)              │ (Thread 3)
+          ▼                         ▼                         ▼
+  +───────────────────────+ +───────────────────────+ +───────────────────────+
+  | Worker: INFY.NS       | | Worker: HDB           | | Worker: RELIANCE.NS   |
+  | - Google Search       | | - Google Search       | | - Google Search       |
+  | - Yahoo Finance MCP   | | - Yahoo Finance MCP   | | - Yahoo Finance MCP   |
+  | - Risk Assessment     | | - Risk Assessment     | | - Risk Assessment     |
+  | Status: SUCCESS       | | Status: FAILURE/ERROR | | Status: SUCCESS       |
+  +───────────┬───────────+ +───────────┬───────────+ +───────────┬───────────+
+              │                         │                         │
+              └─────────────────────────┼─────────────────────────┘
+                                        │
+                                        ▼
+                                [Fan-In Aggregator]
+                                        │
+                                        ▼
+  +───────────────────────────────────────────────────────────────────────────+
+  | ParallelPortfolioComparisonAgentV7                                        |
+  | - Cross-sectional comparative matrix (Valuation, Growth, Risk Profile)    |
+  | - Explicit Failure Section: Documents HDB error & missing metrics         |
+  | - Strict Anti-Fabrication: Does not invent missing data                   |
+  | - Relative strengths, key catalysts, and mandatory disclaimer            |
+  +───────────────────────────────────────────────────────────────────────────+
+```
+
+---
+
+#### Workflow 3: Iterative Author-Critic Loop (`ResearchCriticLoopWorkflowV7`)
+```
+User Request: "Create an investment research report on Infosys and ensure important factual claims are supported by evidence."
+                              │
+                              ▼
+  +─────────────────────────────────────────────────────────────+
+  | Step 1: Initial Draft or Revision (ReportDraftingAgentV7)   |
+  | - Drafts or revises 6-section evidence-backed research report|
+  | - State Variable: draft_report                              |
+  +─────────────────────────────┬───────────────────────────────+
+                                │
+                                ▼
+  +─────────────────────────────────────────────────────────────+
+  | Step 2: Evidence & Compliance Audit                         |
+  |         (ComplianceEvidenceCriticAgentV7)                   |
+  | - Audits factual claims, citations, numbers, and dates      |
+  | - State Variable: critic_feedback                           |
+  +─────────────────────────────┬───────────────────────────────+
+                                │
+               ┌────────────────┴────────────────┐
+               │ Decision: Acceptable Evidence?  │
+               ▼                                 ▼
+      [YES: Approved]                   [NO: Unsubstantiated Claims]
+               │                                 │
+               ▼                                 ▼
+    Calls ExitLoopTool.INSTANCE          Provides Specific Revision Tasks
+    (Terminates LoopAgent)               (Loops back to Step 1, max 3)
+               │                                 │
+               ▼                                 └───────┐
+  +───────────────────────────────────────────+          │
+  | Step 3: Final Presentation                |          │
+  |         (FinalReportPresenterAgentV7)     |<─────────┘ (After 3 iterations)
+  | - Institutional formatting                |
+  | - Compliance audit seal & verification log|
+  | - Non-advice regulatory disclaimer        |
+  +───────────────────────────────────────────+
+```
 
 ---
 

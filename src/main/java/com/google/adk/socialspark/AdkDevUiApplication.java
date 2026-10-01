@@ -35,9 +35,10 @@ public final class AdkDevUiApplication {
         LlmAgent stockMarketResearchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
         LlmAgent financeAdvisorAgentV4 = FinanceAdvisorAgentV4Factory.createFinanceAdvisorAgentV4();
 
-        // Initialize Yahoo Finance MCP client for V5 & V6
+        // Initialize Yahoo Finance MCP client for V5, V6 & V7
         LlmAgent financeAdvisorAgentV5;
         LlmAgent financeAdvisorAgentV6;
+        LlmAgent financeAdvisorAgentV7;
         try {
             YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager();
             mcpManager.start();
@@ -48,10 +49,12 @@ public final class AdkDevUiApplication {
             }));
             financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(mcpManager.getMcpToolset());
             financeAdvisorAgentV6 = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(mcpManager.getMcpToolset());
+            financeAdvisorAgentV7 = com.google.adk.finance.v7.FinanceAdvisorAgentV7.createFinanceAdvisorAgentV7(mcpManager.getMcpToolset());
         } catch (Exception e) {
             System.err.println("Warning: Could not start Yahoo Finance MCP client: " + e.getMessage());
             financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(null);
             financeAdvisorAgentV6 = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(null);
+            financeAdvisorAgentV7 = com.google.adk.finance.v7.FinanceAdvisorAgentV7.createFinanceAdvisorAgentV7(null);
         }
 
         // Boot Spring Boot ADK Web Server with static agent registration
@@ -65,7 +68,8 @@ public final class AdkDevUiApplication {
                 stockMarketResearchAgent,
                 financeAdvisorAgentV4,
                 financeAdvisorAgentV5,
-                financeAdvisorAgentV6
+                financeAdvisorAgentV6,
+                financeAdvisorAgentV7
         );
     }
 
