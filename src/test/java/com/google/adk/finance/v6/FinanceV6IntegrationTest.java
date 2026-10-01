@@ -2,8 +2,8 @@ package com.google.adk.finance.v6;
 
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.finance.v2.CustomerPortfolioRepository;
-import com.google.adk.finance.v2.LoadCustomerPortfolioTool;
-import com.google.adk.finance.v3.PortfolioMathTool;
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
+import com.google.adk.finance.tools.PortfolioMathTool;
 import com.google.adk.finance.v5.YahooFinanceMcpClientManager;
 import com.google.adk.finance.v6.subagents.FundamentalAnalysisAgentV6;
 import com.google.adk.finance.v6.subagents.MarketResearchAgentV6;

@@ -1,10 +1,10 @@
 package com.google.adk.finance.v5;
 
 import com.google.adk.agents.LlmAgent;
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
+import com.google.adk.finance.tools.PortfolioMathTool;
+import com.google.adk.finance.tools.ProjectKnowledgeTool;
 import com.google.adk.finance.v2.CustomerPortfolioRepository;
-import com.google.adk.finance.v2.LoadCustomerPortfolioTool;
-import com.google.adk.finance.v3.PortfolioMathTool;
-import com.google.adk.finance.v4.ProjectKnowledgeTool;
 import com.google.adk.tools.BaseTool;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;

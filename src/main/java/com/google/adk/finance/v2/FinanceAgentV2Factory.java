@@ -1,6 +1,7 @@
 package com.google.adk.finance.v2;
 
 import com.google.adk.agents.LlmAgent;
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
 import com.google.adk.models.BaseLlm;
 import com.google.adk.socialspark.config.AppConfig;
 import org.slf4j.Logger;

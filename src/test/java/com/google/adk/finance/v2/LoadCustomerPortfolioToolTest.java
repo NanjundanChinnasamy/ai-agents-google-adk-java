@@ -1,5 +1,6 @@
 package com.google.adk.finance.v2;
 
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
 import com.google.genai.types.FunctionDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

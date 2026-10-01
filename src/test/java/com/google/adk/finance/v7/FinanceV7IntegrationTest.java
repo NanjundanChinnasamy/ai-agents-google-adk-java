@@ -6,7 +6,7 @@ import com.google.adk.agents.LoopAgent;
 import com.google.adk.agents.ParallelAgent;
 import com.google.adk.agents.SequentialAgent;
 import com.google.adk.finance.v2.CustomerPortfolioRepository;
-import com.google.adk.finance.v3.PortfolioMathTool;
+import com.google.adk.finance.tools.PortfolioMathTool;
 import com.google.adk.finance.v5.YahooFinanceMcpClientManager;
 import com.google.adk.finance.v7.subagents.CompanyParallelResearchWorkerV7;
 import com.google.adk.finance.v7.subagents.CompanyResearchAgentV7;
@@ -18,10 +18,14 @@ import com.google.adk.finance.v7.subagents.ReportDraftingAgentV7;
 import com.google.adk.finance.v7.subagents.RiskAnalysisAgentV7;
 import com.google.adk.finance.v7.subagents.SequentialReportSynthesisAgentV7;
 import com.google.adk.finance.v7.subagents.ValuationAnalysisAgentV7;
+import com.google.adk.finance.v7.tools.RunCriticLoopWorkflowTool;
+import com.google.adk.finance.v7.tools.RunParallelWorkflowTool;
+import com.google.adk.finance.v7.tools.RunSequentialWorkflowTool;
 import com.google.adk.finance.v7.workflows.loop.ResearchCriticLoopWorkflowV7;
 import com.google.adk.finance.v7.workflows.parallel.PortfolioParallelResearchWorkflowV7;
 import com.google.adk.finance.v7.workflows.sequential.InvestmentResearchSequentialWorkflowV7;
 import com.google.adk.tools.BaseTool;
+import com.google.adk.tools.BaseToolset;
 import com.google.adk.tools.ExitLoopTool;
 import com.google.adk.tools.GoogleSearchTool;
 import org.junit.jupiter.api.AfterAll;
@@ -294,17 +298,29 @@ public class FinanceV7IntegrationTest {
     }
 
     @Test
-    @DisplayName("Test 9: Verify RunCriticLoopWorkflowTool Declaration & Schema Contract")
-    void testRunCriticLoopWorkflowToolDeclarationAndContract() {
-        FinanceAdvisorAgentV7.RunCriticLoopWorkflowTool tool =
-                new FinanceAdvisorAgentV7.RunCriticLoopWorkflowTool(null);
+    @DisplayName("Test 9: Verify Workflow Tools (RunSequential, RunParallel, RunCriticLoop) Declaration & Schema Contract")
+    void testWorkflowToolsDeclarationAndContract() {
+        RunSequentialWorkflowTool seqTool = new RunSequentialWorkflowTool(null);
+        assertThat(seqTool.name()).isEqualTo("run_sequential_research_workflow");
+        assertThat(seqTool.declaration()).isPresent();
+        assertThat(seqTool.declaration().get().name()).hasValue("run_sequential_research_workflow");
+        assertThat(seqTool.declaration().get().parameters()).isPresent();
+        assertThat(seqTool.declaration().get().parameters().get().properties().get()).containsKey("company");
 
-        assertThat(tool.name()).isEqualTo("run_critic_loop_research_workflow");
-        assertThat(tool.declaration()).isPresent();
-        assertThat(tool.declaration().get().name()).hasValue("run_critic_loop_research_workflow");
-        assertThat(tool.declaration().get().parameters()).isPresent();
-        assertThat(tool.declaration().get().parameters().get().properties().get()).containsKey("company");
-        assertThat(tool.declaration().get().parameters().get().required().get()).contains("company");
+        RunParallelWorkflowTool parTool = new RunParallelWorkflowTool(null);
+        assertThat(parTool.name()).isEqualTo("run_parallel_portfolio_research_workflow");
+        assertThat(parTool.declaration()).isPresent();
+        assertThat(parTool.declaration().get().name()).hasValue("run_parallel_portfolio_research_workflow");
+        assertThat(parTool.declaration().get().parameters()).isPresent();
+        assertThat(parTool.declaration().get().parameters().get().properties().get()).containsKey("companies");
+
+        RunCriticLoopWorkflowTool loopTool = new RunCriticLoopWorkflowTool((BaseToolset) null);
+        assertThat(loopTool.name()).isEqualTo("run_critic_loop_research_workflow");
+        assertThat(loopTool.declaration()).isPresent();
+        assertThat(loopTool.declaration().get().name()).hasValue("run_critic_loop_research_workflow");
+        assertThat(loopTool.declaration().get().parameters()).isPresent();
+        assertThat(loopTool.declaration().get().parameters().get().properties().get()).containsKey("company");
+        assertThat(loopTool.declaration().get().parameters().get().required().get()).contains("company");
     }
 }
 

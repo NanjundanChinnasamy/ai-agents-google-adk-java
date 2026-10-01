@@ -76,3 +76,16 @@ The Fan-In aggregator synthesizes:
 2. **Failed Analyses**: FAIL (Simulated connection failure)
 3. **Missing Information**: Quantitative metrics omitted for failed companies.
 4. **Data Integrity Rule**: Missing company data is NEVER fabricated.
+
+---
+
+## 4. Participating Agents & Tools
+
+| Component | Class | Package | Purpose |
+|---|---|---|---|
+| **Workflow Tool** | [`RunParallelWorkflowTool`](../../../src/main/java/com/google/adk/finance/v7/tools/RunParallelWorkflowTool.java) | `com.google.adk.finance.v7.tools` | Workflow invocation wrapper called by `FinanceAdvisorAgentV7` |
+| **Worker Sub-Agent** | [`CompanyParallelResearchWorkerV7`](../../../src/main/java/com/google/adk/finance/v7/subagents/CompanyParallelResearchWorkerV7.java) | `com.google.adk.finance.v7.subagents` | Concurrent company researcher executed in parallel tasks |
+| **Comparator Sub-Agent** | [`ParallelPortfolioComparisonAgentV7`](../../../src/main/java/com/google/adk/finance/v7/subagents/ParallelPortfolioComparisonAgentV7.java) | `com.google.adk.finance.v7.subagents` | Fan-in aggregator synthesizing comparative matrices and auditing failures |
+| **Concurrency Wrapper** | [`ThreadSafeMcpToolset`](../../../src/main/java/com/google/adk/finance/v7/workflows/parallel/ThreadSafeMcpToolset.java) | `com.google.adk.finance.v7.workflows.parallel` | Synchronized MCP tool wrapper ensuring thread safety across concurrent workers |
+| **Shared Math** | [`PortfolioMathTool`](../../../src/main/java/com/google/adk/finance/tools/PortfolioMathTool.java) | `com.google.adk.finance.tools` | Deterministic PnL, allocation weights & concentration risk |
+| **Shared Knowledge** | [`ProjectKnowledgeTool`](../../../src/main/java/com/google/adk/finance/tools/ProjectKnowledgeTool.java) | `com.google.adk.finance.tools` | Curated grounding principles (`knowledge/`) |

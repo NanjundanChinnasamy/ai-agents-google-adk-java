@@ -93,11 +93,16 @@
 src/main/java/com/google/adk/finance/v7/
 ├── FinanceAdvisorAgentV7.java
 ├── FinanceConsoleV7.java
+├── tools/
+│   ├── RunSequentialWorkflowTool.java
+│   ├── RunParallelWorkflowTool.java
+│   └── RunCriticLoopWorkflowTool.java
 ├── workflows/
 │   ├── sequential/
 │   │   └── InvestmentResearchSequentialWorkflowV7.java
 │   ├── parallel/
-│   │   └── PortfolioParallelResearchWorkflowV7.java
+│   │   ├── PortfolioParallelResearchWorkflowV7.java
+│   │   └── ThreadSafeMcpToolset.java
 │   └── loop/
 │       └── ResearchCriticLoopWorkflowV7.java
 └── subagents/
@@ -111,6 +116,12 @@ src/main/java/com/google/adk/finance/v7/
     ├── ReportDraftingAgentV7.java
     ├── ComplianceEvidenceCriticAgentV7.java
     └── FinalReportPresenterAgentV7.java
+
+Shared Tools (com.google.adk.finance.tools):
+src/main/java/com/google/adk/finance/tools/
+├── LoadCustomerPortfolioTool.java
+├── PortfolioMathTool.java
+└── ProjectKnowledgeTool.java
 ```
 
 ---

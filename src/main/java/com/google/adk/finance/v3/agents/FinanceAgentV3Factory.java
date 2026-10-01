@@ -1,8 +1,8 @@
 package com.google.adk.finance.v3.agents;
 
 import com.google.adk.agents.LlmAgent;
-import com.google.adk.finance.v2.LoadCustomerPortfolioTool;
-import com.google.adk.finance.v3.PortfolioMathTool;
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
+import com.google.adk.finance.tools.PortfolioMathTool;
 import com.google.adk.models.BaseLlm;
 import com.google.adk.socialspark.config.AppConfig;
 import com.google.adk.tools.AgentTool;

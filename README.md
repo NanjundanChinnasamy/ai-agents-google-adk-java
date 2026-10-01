@@ -79,17 +79,17 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - `LlmAgent`, `AppConfig.createModel()`, `InMemoryRunner`, and session lifecycle management.
 - **Week 1 — Version 2 (`finance.v2`)**:
   - **SQLite Relational Persistence**: Composite primary key `customer (customer_id, portfolio_id)` and `portfolio_holding` table with auto-seeding.
-  - **Custom Tool Integration**: `LoadCustomerPortfolioTool` (`load_customer_portfolio`) querying SQLite and injecting holdings into active session state via `toolContext.state()`.
+  - **Custom Tool Integration**: `LoadCustomerPortfolioTool` (in `com.google.adk.finance.tools`, aliased in `v2`) querying SQLite and injecting holdings into active session state via `toolContext.state()`.
   - **Dynamic Prompt Templating**: Embeds `{customer_id?}`, `{portfolio_id?}`, and `{portfolio_holdings?}` placeholders into agent instructions.
   - **Multi-Turn State Preservation**: Asks for Customer ID once, retrieves portfolio from SQLite, and retains state across turns to answer inquiries directly without re-querying.
   - **Regulatory Compliance Guardrail**: Automatically appends mandatory institutional disclaimers.
 - **Week 2 — Version 3 (`finance.v3`)**:
   - **Google Search Grounding**: Live factual retrieval for recent company news, quarterly earnings, analyst consensus/targets, corporate disclosures, and macro catalysts.
-  - **Deterministic Java Math Tool (`PortfolioMathTool`)**: Offloads arithmetic from LLM to Java for exact calculations: PnL, cost basis, return %, portfolio allocation weights, concentration risk flags (>25%), and technical indicators (SMA).
+  - **Deterministic Java Math Tool (`PortfolioMathTool`)**: (in `com.google.adk.finance.tools`, aliased in `v3`) Offloads arithmetic from LLM to Java for exact calculations: PnL, cost basis, return %, portfolio allocation weights, concentration risk flags (>25%), and technical indicators (SMA).
   - **Grounded Decision-Support Synthesis**: Merges real-time web evidence with exact mathematical metrics, concluding with mandatory regulatory disclaimers.
 - **Week 2 — Version 4 (`finance.v4`)**:
   - **Dynamic Domain Skills (`SkillToolset` & `LocalSkillSource`)**: Modular on-demand domain capability skills (`skills/finance/`): `finance-fundamentals`, `fundamental-analysis`, `valuation`, `risk-management`, `portfolio-analysis`, and `market-research`.
-  - **Curated Grounding Knowledge (`knowledge/`)**: Project-level domain frameworks (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) accessed via `ProjectKnowledgeTool` (`read_project_knowledge`).
+  - **Curated Grounding Knowledge (`knowledge/`)**: Project-level domain frameworks (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) accessed via `ProjectKnowledgeTool` (in `com.google.adk.finance.tools`, aliased in `v4`).
   - **Three-Tier Knowledge Hierarchy & Grounding Transparency**: Explicitly distinguishes *Project Knowledge* (curated frameworks), *Current Information* (live Google Search via `stockmarket_researcher`), and *Analysis & Interpretation* (model reasoning) concluded with mandatory regulatory disclaimers.
 - **Week 3 — Version 5 (`finance.v5`)**:
   - **Model Context Protocol (MCP) Integration**: Consumes live structured market tools exposed by the standalone Java Yahoo Finance MCP server via Google ADK Java's `McpToolset` over STDIO transport.
@@ -113,7 +113,7 @@ The application accommodates two complementary autonomous multi-agent systems sh
     1. **Sequential Workflow** (`InvestmentResearchSequentialWorkflowV7`): Built using `SequentialAgent`. Executes a linear 5-stage dependency chain: Company Research (`GoogleSearchTool.INSTANCE`) -> Fundamentals (Yahoo Finance MCP) -> Risk Analysis (Beta & Volatility) -> Valuation Analysis (Grounded Multiples) -> Synthesis Report (Institutional 7-section document with mandatory regulatory disclaimer). Context passes explicitly downstream via `outputKey` and `{outputKey}` prompt bindings.
     2. **Parallel Workflow** (`PortfolioParallelResearchWorkflowV7`): Built using `ParallelAgent` and concurrent Java `CompletableFuture` execution engine. Features genuine non-blocking fan-out execution across multiple companies with real event logging (`[PARALLEL] Starting ...`, `[PARALLEL] ... completed`), followed by fan-in comparative synthesis. Demonstrates resilient partial failure handling (e.g. if one stock fails or encounters missing data, the comparative synthesis still produces the report without failing or hallucinating data).
     3. **Iterative Critic Loop** (`ResearchCriticLoopWorkflowV7`): Built using `LoopAgent` with `maxIterations(3)` and dynamic loop termination governed by `ExitLoopTool.INSTANCE` (`exit_loop`). Iteratively routes drafts between an authoring agent (`ReportDraftingAgentV7`) and an independent compliance critic (`ComplianceEvidenceCriticAgentV7`). Loop exits only when empirical evidence citations, balanced risk coverage, and mandatory regulatory disclaimers pass audit.
-  - **Root Orchestrator (`workflow_director` / `FinanceAdvisorAgentV7`)**: Evaluates user inquiry intent, coordinates workflow selection, and triggers the appropriate deterministic workflow engine via dedicated tools (`run_sequential_research_workflow`, `run_parallel_portfolio_research_workflow`, `run_critic_loop_research_workflow`).
+  - **Root Orchestrator (`workflow_director` / `FinanceAdvisorAgentV7`)**: Evaluates user inquiry intent, coordinates workflow selection, and triggers the appropriate deterministic workflow engine via dedicated tools in `com.google.adk.finance.v7.tools` (`run_sequential_research_workflow`, `run_parallel_portfolio_research_workflow`, `run_critic_loop_research_workflow`).
   - **Reference Guide**: See [`docs/finance-agent-v7.md`](docs/finance-agent-v7.md) and [`v7/README.md`](v7/README.md).
 
 ---
@@ -200,6 +200,11 @@ ai-agents-google-adk-java/
     │   │   │       └── AgUiEventTranslator.java       # Reactive ADK Event -> SSE translator
     │   │   │
     │   │   └── finance/                               # DOMAIN 2: Finance Portfolio Decision-Support
+    │   │       ├── tools/                             # Shared Finance Tools (Cross-Version)
+    │   │       │   ├── LoadCustomerPortfolioTool.java # BaseTool injecting state via ToolContext
+    │   │       │   ├── PortfolioMathTool.java         # BaseTool for PnL, allocation & SMA math
+    │   │       │   └── ProjectKnowledgeTool.java      # BaseTool reading curated knowledge markdown
+    │   │       │
     │   │       ├── v1/                                # Week 1: Foundational Agent & Session
     │   │       │   ├── FinanceAgentV1Factory.java     # LlmAgent factory & instruction engineering
     │   │       │   └── FinanceConsoleV1.java          # Dedicated interactive CLI console
@@ -207,7 +212,7 @@ ai-agents-google-adk-java/
     │   │       ├── v2/                                # Week 1: Context & Holdings State Management
     │   │       │   ├── PortfolioModels.java           # Customer & holding domain records
     │   │       │   ├── CustomerPortfolioRepository.java # SQLite DAO with WAL mode & auto-seed
-    │   │       │   ├── LoadCustomerPortfolioTool.java # BaseTool injecting state via ToolContext
+    │   │       │   ├── LoadCustomerPortfolioTool.java # Backward-compat alias -> finance.tools
     │   │       │   ├── FinanceAgentV2Factory.java     # Agent factory with dynamic prompt templates
     │   │       │   └── FinanceConsoleV2.java          # Multi-turn stateful CLI console
     │   │       │
@@ -215,11 +220,11 @@ ai-agents-google-adk-java/
     │   │       │   ├── agents/
     │   │       │   │   ├── FinanceAgentV3Factory.java         # Root decision-support agent
     │   │       │   │   └── MarketResearchAgentFactory.java    # Isolated GoogleSearchTool agent
-    │   │       │   ├── PortfolioMathTool.java                 # BaseTool for PnL, allocation & SMA math
+    │   │       │   ├── PortfolioMathTool.java                 # Backward-compat alias -> finance.tools
     │   │       │   └── FinanceConsoleV3.java                  # Interactive search & math CLI console
     │   │       │
     │   │       ├── v4/                                # Week 2: Skills + Grounding Knowledge
-    │   │       │   ├── ProjectKnowledgeTool.java              # BaseTool reading curated knowledge markdown
+    │   │       │   ├── ProjectKnowledgeTool.java              # Backward-compat alias -> finance.tools
     │   │       │   ├── FinanceAdvisorAgentV4Factory.java      # Root advisor factory wiring skills, knowledge & search
     │   │       │   └── FinanceConsoleV4.java                  # Interactive skills & knowledge CLI console
     │   │       │
@@ -241,11 +246,16 @@ ai-agents-google-adk-java/
     │   │       └── v7/                                # Week 4: Workflow Orchestration
     │   │           ├── FinanceAdvisorAgentV7.java             # Root orchestrator (workflow_director)
     │   │           ├── FinanceConsoleV7.java                  # Interactive CLI runner for workflows
+    │   │           ├── tools/                                 # V7 Workflow Invocation Tools
+    │   │           │   ├── RunSequentialWorkflowTool.java     # BaseTool executing sequential workflow
+    │   │           │   ├── RunParallelWorkflowTool.java       # BaseTool executing parallel fan-out/in
+    │   │           │   └── RunCriticLoopWorkflowTool.java     # BaseTool executing iterative critic loop
     │   │           ├── workflows/                             # 3 Deterministic Workflow Engines
     │   │           │   ├── sequential/
     │   │           │   │   └── InvestmentResearchSequentialWorkflowV7.java # 5-Stage Sequential Pipeline (SequentialAgent)
     │   │           │   ├── parallel/
-    │   │           │   │   └── PortfolioParallelResearchWorkflowV7.java    # Concurrent Fan-Out/In with failure isolation
+    │   │           │   │   ├── PortfolioParallelResearchWorkflowV7.java    # Concurrent Fan-Out/In with failure isolation
+    │   │           │   │   └── ThreadSafeMcpToolset.java                   # Synchronized toolset wrapper for parallel safety
     │   │           │   └── loop/
     │   │           │       └── ResearchCriticLoopWorkflowV7.java           # Iterative Critic Loop (LoopAgent + ExitLoopTool)
     │   │           └── subagents/                             # 10 Specialized V7 Sub-Agents

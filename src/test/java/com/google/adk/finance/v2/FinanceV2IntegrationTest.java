@@ -1,6 +1,7 @@
 package com.google.adk.finance.v2;
 
 import com.google.adk.agents.LlmAgent;
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
 import com.google.adk.runner.InMemoryRunner;
 import com.google.adk.runner.Runner;
 import com.google.adk.sessions.Session;

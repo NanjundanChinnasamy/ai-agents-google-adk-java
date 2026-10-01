@@ -29,11 +29,17 @@ src/main/java/com/google/adk/finance/v7/
 ├── FinanceAdvisorAgentV7.java         <- Root Orchestrator Agent (workflow_director)
 ├── FinanceConsoleV7.java              <- Interactive CLI Runner with Workflow Observability
 │
+├── tools/                             <- Dedicated Workflow Execution Tools
+│   ├── RunSequentialWorkflowTool.java <- BaseTool executing Sequential 5-Stage Pipeline
+│   ├── RunParallelWorkflowTool.java   <- BaseTool executing Concurrent Fan-Out/In Workflow
+│   └── RunCriticLoopWorkflowTool.java <- BaseTool executing Iterative Research-Critic Loop
+│
 ├── workflows/
 │   ├── sequential/
 │   │   └── InvestmentResearchSequentialWorkflowV7.java  <- 5-Stage Sequential Pipeline (SequentialAgent)
 │   ├── parallel/
-│   │   └── PortfolioParallelResearchWorkflowV7.java     <- Concurrent Fan-Out / Fan-In with failure isolation
+│   │   ├── PortfolioParallelResearchWorkflowV7.java     <- Concurrent Fan-Out / Fan-In with failure isolation
+│   │   └── ThreadSafeMcpToolset.java                    <- Synchronized toolset wrapper for parallel safety
 │   └── loop/
 │       └── ResearchCriticLoopWorkflowV7.java            <- Iterative Critic Loop (LoopAgent + ExitLoopTool)
 │
@@ -49,6 +55,12 @@ src/main/java/com/google/adk/finance/v7/
     ├── ComplianceEvidenceCriticAgentV7.java    <- Quality critic with ExitLoopTool termination
     └── FinalReportPresenterAgentV7.java        <- Final presenter of audited report and verification seal
 
+Shared Tools Utilized (Package: com.google.adk.finance.tools):
+src/main/java/com/google/adk/finance/tools/
+├── LoadCustomerPortfolioTool.java              <- Queries SQLite holdings and populates session state
+├── PortfolioMathTool.java                      <- Deterministic PnL, allocation weights & concentration risk
+└── ProjectKnowledgeTool.java                   <- Reads curated valuation, risk & portfolio markdown
+
 Integration Test Suite:
 src/test/java/com/google/adk/finance/v7/
 └── FinanceV7IntegrationTest.java      <- Comprehensive test suite validating all 3 workflows & failure isolation
@@ -61,9 +73,9 @@ src/test/java/com/google/adk/finance/v7/
 | Version | Focus | Core Concept |
 |---|---|---|
 | **V1** | Baseline Agent | `LlmAgent`, `InMemoryRunner`, `SessionService` |
-| **V2** | Context & State | SQLite persistence, `LoadCustomerPortfolioTool`, prompt templating |
-| **V3** | Tools & Search | `PortfolioMathTool`, `stockmarket_researcher` via `AgentTool` |
-| **V4** | Skills & Knowledge | `SkillToolset`, `ProjectKnowledgeTool`, curated valuation/risk markdown |
+| **V2** | Context & State | SQLite persistence, `LoadCustomerPortfolioTool` (`com.google.adk.finance.tools`), prompt templating |
+| **V3** | Tools & Search | `PortfolioMathTool` (`com.google.adk.finance.tools`), `stockmarket_researcher` via `AgentTool` |
+| **V4** | Skills & Knowledge | `SkillToolset`, `ProjectKnowledgeTool` (`com.google.adk.finance.tools`), curated valuation/risk markdown |
 | **V5** | MCP Integration | Yahoo Finance MCP Server over stdio, `McpToolset` dynamic tool discovery |
 | **V6** | Sub-Agents | Dynamic multi-agent delegation: parent LLM selects from 5 specialists |
 | **V7** | **Workflow Orchestration** | **Deterministic pipelines: (1) Sequential 5-stage pipeline, (2) Parallel fan-out/fan-in with failure isolation, (3) Iterative critic loop with `ExitLoopTool` termination.** |

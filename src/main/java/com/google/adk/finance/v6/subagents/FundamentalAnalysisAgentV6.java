@@ -2,7 +2,7 @@ package com.google.adk.finance.v6.subagents;
 
 import com.google.adk.agents.Callbacks;
 import com.google.adk.agents.LlmAgent;
-import com.google.adk.finance.v4.ProjectKnowledgeTool;
+import com.google.adk.finance.tools.ProjectKnowledgeTool;
 import com.google.adk.finance.v5.YahooFinanceMcpClientManager;
 import com.google.adk.models.BaseLlm;
 import com.google.adk.skills.LocalSkillSource;

@@ -2,7 +2,8 @@ package com.google.adk.finance.v3;
 
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.finance.v2.CustomerPortfolioRepository;
-import com.google.adk.finance.v2.LoadCustomerPortfolioTool;
+import com.google.adk.finance.tools.LoadCustomerPortfolioTool;
+import com.google.adk.finance.tools.PortfolioMathTool;
 import com.google.adk.finance.v3.agents.FinanceAgentV3Factory;
 import com.google.adk.finance.v3.agents.MarketResearchAgentFactory;
 import com.google.adk.runner.InMemoryRunner;

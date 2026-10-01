@@ -20,11 +20,11 @@ The root `FinanceAdvisorAgentV7` is responsible for:
 
 ## 2. Tools Registered
 
-| Tool Name | Class | Purpose |
-|---|---|---|
-| `run_sequential_research_workflow` | `RunSequentialWorkflowTool` | Launches 5-stage sequential research pipeline |
-| `run_parallel_portfolio_research_workflow` | `RunParallelWorkflowTool` | Launches concurrent fan-out / fan-in multi-company research |
-| `run_critic_loop_research_workflow` | `RunCriticLoopWorkflowTool` | Launches iterative authoring & compliance critic loop |
-| `load_customer_portfolio` | `LoadCustomerPortfolioTool` | Queries SQLite holdings and sets session state |
-| `portfolio_math` | `PortfolioMathTool` | Deterministic PnL, allocation, and concentration calculations |
-| `read_project_knowledge` | `ProjectKnowledgeTool` | Reads curated valuation, risk, and portfolio markdown guidelines |
+| Tool Name | Class | Package | Purpose |
+|---|---|---|---|
+| `run_sequential_research_workflow` | [`RunSequentialWorkflowTool`](../../src/main/java/com/google/adk/finance/v7/tools/RunSequentialWorkflowTool.java) | `com.google.adk.finance.v7.tools` | Launches 5-stage sequential research pipeline |
+| `run_parallel_portfolio_research_workflow` | [`RunParallelWorkflowTool`](../../src/main/java/com/google/adk/finance/v7/tools/RunParallelWorkflowTool.java) | `com.google.adk.finance.v7.tools` | Launches concurrent fan-out / fan-in multi-company research |
+| `run_critic_loop_research_workflow` | [`RunCriticLoopWorkflowTool`](../../src/main/java/com/google/adk/finance/v7/tools/RunCriticLoopWorkflowTool.java) | `com.google.adk.finance.v7.tools` | Launches iterative authoring & compliance critic loop |
+| `load_customer_portfolio` | [`LoadCustomerPortfolioTool`](../../src/main/java/com/google/adk/finance/tools/LoadCustomerPortfolioTool.java) | `com.google.adk.finance.tools` | Queries SQLite holdings and sets session state |
+| `portfolio_math` | [`PortfolioMathTool`](../../src/main/java/com/google/adk/finance/tools/PortfolioMathTool.java) | `com.google.adk.finance.tools` | Deterministic PnL, allocation, and concentration calculations |
+| `read_project_knowledge` | [`ProjectKnowledgeTool`](../../src/main/java/com/google/adk/finance/tools/ProjectKnowledgeTool.java) | `com.google.adk.finance.tools` | Reads curated valuation, risk, and portfolio markdown guidelines |
