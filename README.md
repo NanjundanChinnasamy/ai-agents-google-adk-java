@@ -135,8 +135,18 @@ The application accommodates two complementary autonomous multi-agent systems sh
        - `ComplianceDisclaimerGuard`: Automatically inspects and injects mandatory institutional non-advice disclaimers.
     5. **Sub-Agents & Tools**:
        - `GuardedMarketResearchAgentV8`: Isolated search sub-agent (`GoogleSearchTool.INSTANCE`) protected by V8 guardrail callbacks.
-       - `MockTradingAgentV8`: Prohibited transactional tool harness verifying that `execute_trade` is strictly blocked by `BeforeToolGuardrail`.
-  - **Reference Guide**: See [`docs/finance-agent-v8.md`](docs/finance-agent-v8.md), [`v8/README.md`](v8/README.md), and [`v8/guardrails/README.md`](v8/guardrails/README.md).
+       - `MockTradingAgentV8`: Prohibited transactional tool harness verifying that `execute_trade` is strictly blocked by `Befo   - **Reference Guide**: See [`docs/finance-agent-v8.md`](docs/finance-agent-v8.md), [`v8/README.md`](v8/README.md), and [`v8/guardrails/README.md`](v8/guardrails/README.md).
+- **Week 5 — Version 9 (`finance.v9`)**:
+  - **Evaluation & Failure Testing Harness**: Answers *"How do I know my Finance Advisor is producing trustworthy results?"*
+  - **Deterministic Evaluators**:
+    1. `FaithfulnessEvaluator`: Audits factual claims against empirical tool records in `EvidenceStoreV9` (distinguishing retrieved facts, derived calculations, model interpretations, and unsupported claims).
+    2. `CalculationFidelityEvaluator`: Verifies position PnL and portfolio weights against `PortfolioMathTool` formulas within numerical tolerance.
+    3. `ScenarioCompletenessEvaluator`: Enforces 3-tier scenario analysis (Baseline, Upside, Stress) containing concrete assumptions, projections, and metrics.
+  - **Qualitative LLM-as-a-Judge (`LlmJudgeEvaluator`)**: Evaluates evidence contextualization, reasoning consistency, uncertainty calibration, and prompt alignment without overriding deterministic calculations.
+  - **Adversarial Failure Testing (`FailureScenarioRunner`)**: Simulates PII injection, prompt overrides, invalid tickers, unauthorized operations, and MCP tool outages to verify graceful degradation without hallucination.
+  - **Golden Benchmark Dataset**: Versioned golden test cases (`finance-evaluation-cases.json`, `failure-test-cases.json`) with intentional failure detection.
+  - **V8 Guardrail Regression**: Automated test suite proving perimeter safety defenses remain intact.
+  - **Reference Guide**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
 
 ---
 
@@ -159,6 +169,7 @@ ai-agents-google-adk-java/
 ├── test-finance-v6.bat / .sh  # Dedicated CLI runner for Finance Advisor v6 (Sub-Agents)
 ├── test-finance-v7.bat / .sh  # Dedicated CLI runner for Finance Advisor v7 (Workflow Orchestration)
 ├── test-finance-v8.bat / .sh  # Dedicated CLI runner for Finance Advisor v8 (Guardrails & Callbacks)
+├── test-finance-v9.bat / .sh  # Dedicated CLI runner for Finance Advisor v9 (Evaluation & Failure Testing)
 ├── .env.example               # Environment variables template
 ├── docs/                      # Technical documentation and milestone references
 │   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
@@ -182,6 +193,17 @@ ai-agents-google-adk-java/
 │   ├── guardrails/            # Input, tool, and output guardrail specifications
 │   │   └── README.md
 │   ├── callbacks/             # ADK lifecycle callback architecture & mapping
+│   │   └── README.md
+│   ├── agents/README.md       # Root orchestrator specification
+│   ├── sub-agents/README.md   # Guarded sub-agents specification
+│   └── workflows/README.md    # Guardrail workflow integration notes
+├── v9/                        # Milestone V9 documentation and evaluation reference
+│   ├── README.md              # V9 overview, evaluation metrics & failure testing philosophy
+│   ├── docs/                  # Detailed architectural reference for V9 evaluation
+│   ├── evaluation/            # Deterministic evaluators, evidence store, and LLM judge
+│   │   └── datasets/          # Golden evaluation cases and adversarial failure fixtures
+│   ├── testing/               # Failure scenario runner and test result models
+│   └── tests/                 # JUnit 5 & AssertJ evaluation benchmark test suitelbacks/             # ADK lifecycle callback architecture & mapping
 │   │   └── README.md
 │   ├── agents/README.md       # Root orchestrator specification
 │   ├── sub-agents/README.md   # Guarded sub-agents specification
@@ -448,10 +470,13 @@ Navigate directly to:
   - `finance_advisor_v2`: Test the state-managed portfolio analyst with SQLite holdings persistence and `load_customer_portfolio` tool.
   - `finance_advisor_v3`: Test the grounded research and valuation analyst with live `stockmarket_researcher` (`GoogleSearchTool.INSTANCE`) web grounding and deterministic `PortfolioMathTool` calculations.
   - `stockmarket_researcher`: Test the isolated Google Search stock market research specialist in isolation.
-  - `finance_advisor_v4`: Test the structured advisor combining 6 domain skills (`load_skill`), curated project grounding knowledge (`read_project_knowledge`), and Google Search.
   - `finance_advisor_v5`: Test the institutional-grade advisor combining Yahoo Finance MCP (`get_stock_info`, `get_stock_actions`, `get_financial_statement`, `get_recommendations`), Google Search (`stockmarket_researcher`), domain skills, grounding knowledge, SQLite portfolio state, and deterministic math.
+  - `finance_advisor_v6`: Test the multi-agent hierarchy delegating to specialized research, scenario, and drafting sub-agents.
+  - `finance_advisor_v7`: Test deterministic sequential and parallel workflow orchestration pipelines.
+  - `finance_advisor_v8`: Test the guarded advisor with pre/post lifecycle callbacks, PII masking, injection defense, and output disclaimers.
+  - `finance_advisor_v9`: Test the evaluated advisor with empirical evidence capture (`EvidenceStoreV9`), live evidence inspection tool (`get_captured_evidence`), deterministic scoring, and failure testing.
 - **Visual DAG Graph**: Displays the live execution tree connecting the orchestrator to its sub-agents (`research_agent`, `draft_agent`, `stockmarket_researcher`) and registered tools.
-- **Tool Inspection**: Click on any executed tool chip (e.g. `stockmarket_researcher`, `load_skill`, `read_project_knowledge`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`, `get_stock_info`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
+- **Tool Inspection**: Click on any executed tool chip (e.g. `stockmarket_researcher`, `load_skill`, `read_project_knowledge`, `read_skill_content`, `load_customer_portfolio`, `portfolio_math`, `get_stock_info`, `get_captured_evidence`) in the chat to view the exact function call parameters, input arguments, and model output in the left inspector drawer.
 - **Session Management**: Create new sessions via `+ New Session` or inspect past event steps sequentially (`Event 1 of N`, `Request`, `Response`).
 
 ---
@@ -851,6 +876,35 @@ Run the fully guarded financial advisor demonstrating deterministic input, tool,
 - **Mandatory Compliance Disclaimer**: Non-advice disclaimer appended to all model responses.
 - **Documentation**: See [`v8/README.md`](v8/README.md), [`v8/guardrails/README.md`](v8/guardrails/README.md), and [`v8/callbacks/README.md`](v8/callbacks/README.md).
 
+#### Week 5 — Version 9: Evaluation & Failure Testing (`finance.v9`)
+Run the Finance Advisor V9 interactive evaluation and failure testing console:
+```bash
+# Windows
+.\test-finance-v9.bat
+
+# macOS / Linux
+./test-finance-v9.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV9 --console=plain -q
+
+# Interactive Terminal Slash Commands:
+#   /cases             - List all golden benchmark test cases
+#   /eval <caseId>     - Execute full evaluation report on a specific golden case
+#   /fail <category>   - Execute a live failure test scenario (pii, injection, trade, ticker, outage)
+#   /evidence          - View current session retrieved evidence records
+#   /help              - Display command menu
+#   /quit              - Exit console
+```
+
+**Key Architectural Features in V9:**
+- **Deterministic Faithfulness Evaluator**: Audits claims against `EvidenceStoreV9` empirical tool observations ($\le 2\%$ tolerance).
+- **Deterministic Calculation Fidelity Evaluator**: Recomputes PnL and weights via `PortfolioMathTool` formulas to ensure exact arithmetic alignment.
+- **Deterministic Scenario Completeness Evaluator**: Enforces mandatory Baseline, Upside, and Stress test scenario tiers with quantitative metrics.
+- **Qualitative LLM-as-a-Judge**: Evaluates evidence usage, uncertainty communication, and explanation clarity without overriding deterministic checks.
+- **Adversarial Failure Testing**: Validates system resilience against PII leakage, prompt injection, unauthorized actions, and tool timeouts.
+- **Documentation**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
+
 ---
 
 ### 5. Model Context Protocol (MCP) Server: Yahoo Finance (Java)
@@ -905,6 +959,9 @@ See [`mcp/README.md`](mcp/README.md) for full configuration blocks for Claude De
 
 # Run only Finance Advisor V8 integration and guardrail tests:
 ./gradlew test --tests com.google.adk.finance.v8.*
+
+# Run only Finance Advisor V9 evaluation, failure testing, and regression suite:
+./gradlew test --tests com.google.adk.finance.v9.*
 ```
 
 

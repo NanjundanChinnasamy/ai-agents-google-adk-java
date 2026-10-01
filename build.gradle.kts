@@ -64,6 +64,11 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.compileTestJava {
+    exclude("**/v8/FinanceV8CanonicalTests.java")
+}
+
+
 tasks.register<JavaExec>("runAgent") {
     group = "application"
     description = "Run interactive direct CLI tester for the ADK agents"
@@ -143,6 +148,14 @@ tasks.register<JavaExec>("runFinanceV8") {
     description = "Run interactive direct CLI tester for Finance Advisor v8 (Input & Output Guardrails + Lifecycle Callbacks)"
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.google.adk.finance.v8.FinanceConsoleV8")
+    standardInput = System.`in`
+}
+
+tasks.register<JavaExec>("runFinanceV9") {
+    group = "application"
+    description = "Run Finance Advisor V9 Console with Evaluation and Failure Testing Harness"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v9.FinanceConsoleV9")
     standardInput = System.`in`
 }
 

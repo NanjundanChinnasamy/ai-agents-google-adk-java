@@ -666,13 +666,69 @@ User Request: "Create an investment research report on Infosys and ensure import
 
 ---
 
-### Week 5 — Version 9: Automated Evaluation & Red-Teaming (`finance.v9`)
-- **Package**: `src/test/java/com/google/adk/finance/eval/`
-- **Evaluation Criteria**:
-  - **Faithfulness / Groundedness**: Every statement must map to Google Search or MCP evidence.
-  - **Calculation Fidelity**: PnL and weightings in report must match `PortfolioMathTool` output.
-  - **Scenario Completeness**: Report must include baseline, upside, and stress-test projections.
-- **Testing Tools**: JUnit 5, AssertJ, and an LLM-as-a-Judge evaluation harness.
+### Week 5 — Version 9: Evaluation + Failure Testing (`finance.v9`)
+- **Package**: `com.google.adk.finance.v9` (mirrored in `v9/`)
+- **Core Files**:
+  - [`FinanceAdvisorAgentV9.java`](src/main/java/com/google/adk/finance/v9/FinanceAdvisorAgentV9.java): Root agent factory integrating Google Search, Yahoo Finance MCP, `PortfolioMathTool`, `LoadCustomerPortfolioTool`, and V8 safety guardrails.
+  - [`FinanceConsoleV9.java`](src/main/java/com/google/adk/finance/v9/FinanceConsoleV9.java): Interactive terminal console supporting slash commands (`/cases`, `/eval`, `/fail`, `/evidence`).
+  - [`EvidenceRecord.java`](src/main/java/com/google/adk/finance/v9/evaluation/EvidenceRecord.java): Immutable model capturing tool observations (ticker, field, value, numericValue, sourceReference, raw payload).
+  - [`EvidenceStoreV9.java`](src/main/java/com/google/adk/finance/v9/evaluation/EvidenceStoreV9.java): Thread-safe session evidence repository.
+  - [`FaithfulnessEvaluator.java`](src/main/java/com/google/adk/finance/v9/evaluation/FaithfulnessEvaluator.java): Deterministic claim-to-evidence consistency auditor ($\le 2\%$ tolerance).
+  - [`CalculationFidelityEvaluator.java`](src/main/java/com/google/adk/finance/v9/evaluation/CalculationFidelityEvaluator.java): Deterministic arithmetic verifier validating PnL and allocation weights against `PortfolioMathTool`.
+  - [`ScenarioCompletenessEvaluator.java`](src/main/java/com/google/adk/finance/v9/evaluation/ScenarioCompletenessEvaluator.java): Deterministic 3-tier scenario structure verifier (Baseline, Upside, Stress).
+  - [`LlmJudgeEvaluator.java`](src/main/java/com/google/adk/finance/v9/evaluation/LlmJudgeEvaluator.java): Qualitative judge assessing evidence explanation, uncertainty calibration, and reasoning coherence without overriding arithmetic.
+  - [`EvaluationRunner.java`](src/main/java/com/google/adk/finance/v9/evaluation/EvaluationRunner.java): Central orchestrator producing structured ASCII `EvaluationReport`.
+  - [`GetCapturedEvidenceTool.java`](src/main/java/com/google/adk/finance/v9/tools/GetCapturedEvidenceTool.java): Diagnostic tool enabling real-time inspection of captured empirical evidence directly from the ADK Web Dev UI.
+  - [`FailureScenarioRunner.java`](src/main/java/com/google/adk/finance/v9/testing/FailureScenarioRunner.java): Adversarial failure harness testing PII injection, prompt overrides, invalid tickers, unauthorized operations, and tool timeouts.
+- **Datasets**:
+  - [`finance-evaluation-cases.json`](src/main/resources/finance/v9/datasets/finance-evaluation-cases.json): Golden evaluation benchmark cases.
+  - [`failure-test-cases.json`](src/main/resources/finance/v9/datasets/failure-test-cases.json): Adversarial failure fixtures.
+- **JUnit 5 & AssertJ Test Suite**:
+  - [`FaithfulnessEvaluationTest.java`](src/test/java/com/google/adk/finance/v9/FaithfulnessEvaluationTest.java)
+  - [`CalculationFidelityTest.java`](src/test/java/com/google/adk/finance/v9/CalculationFidelityTest.java)
+  - [`ScenarioCompletenessTest.java`](src/test/java/com/google/adk/finance/v9/ScenarioCompletenessTest.java)
+  - [`LlmJudgeEvaluationTest.java`](src/test/java/com/google/adk/finance/v9/LlmJudgeEvaluationTest.java)
+  - [`GuardrailRegressionTest.java`](src/test/java/com/google/adk/finance/v9/GuardrailRegressionTest.java)
+  - [`FailureTestingTest.java`](src/test/java/com/google/adk/finance/v9/FailureTestingTest.java)
+  - [`FinanceAdvisorV9EvaluationTest.java`](src/test/java/com/google/adk/finance/v9/FinanceAdvisorV9EvaluationTest.java)
+- **ADK Classes & Concepts Learned**:
+  - `AfterToolCallbackSync` evidence ingestion via `AfterToolEvidenceCaptureV9`.
+  - Systematic offline benchmark evaluation of multi-turn sessions.
+  - Clean separation of deterministic truth (`PortfolioMathTool`, `EvidenceRecord`) from qualitative LLM judging.
+  - Adversarial red-teaming and failure injection without data fabrication.
+- **Evaluation Architecture**:
+  ```
+  User Request / Golden Benchmark Case
+             │
+             ▼
+  FinanceAdvisorAgentV9
+             │
+             ├── Google Search Tool (stockmarket_researcher)
+             ├── Yahoo Finance MCP Toolset
+             ├── PortfolioMathTool (Deterministic Math)
+             └── LoadCustomerPortfolioTool (SQLite State)
+             │
+             ▼ (Tool Call Interception via AfterToolEvidenceCaptureV9)
+       EvidenceStoreV9 ◄─────────────────────────┐
+             │                                   │
+             ├─► get_captured_evidence Tool      │ (Live Web Dev UI /
+             │   (Returns verified fact table) ──┘  CLI Interactive Query)
+             │
+             ▼
+       Generated Report
+             │
+     ┌───────┴────────────────────────┐
+     ▼                                ▼
+  Deterministic Evaluators       LLM-as-a-Judge
+  ├── Faithfulness               ├── Evidence Usage
+  ├── Calculation Fidelity       ├── Reasoning Consistency
+  └── Scenario Completeness      ├── Uncertainty Calibration
+     │                           └── Query Responsiveness
+     └───────┬────────────────────────┘
+             ▼
+       EvaluationReport (ASCII & Structured Status)
+  ```
+- **Documentation**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
 
 ---
 

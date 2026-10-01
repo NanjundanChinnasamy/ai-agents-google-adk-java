@@ -1,0 +1,128 @@
+[
+  {
+    "id": "INFY-RESEARCH-001",
+    "description": "Standard evidence-grounded research on Infosys with verified quote and metrics",
+    "category": "NORMAL_RESEARCH",
+    "userRequest": "Research Infosys current valuation and market status.",
+    "evidence": [
+      {
+        "source": "YAHOO_FINANCE_MCP",
+        "tool": "get_stock_info",
+        "ticker": "INFY.NS",
+        "field": "price",
+        "value": "1520.0",
+        "numericValue": 1520.0,
+        "sourceReference": "get_stock_info(INFY.NS)",
+        "originalRetrievedContent": "{\"symbol\":\"INFY.NS\",\"currentPrice\":1520.0,\"pe_ratio\":24.5}"
+      },
+      {
+        "source": "YAHOO_FINANCE_MCP",
+        "tool": "get_stock_info",
+        "ticker": "INFY.NS",
+        "field": "pe_ratio",
+        "value": "24.5",
+        "numericValue": 24.5,
+        "sourceReference": "get_stock_info(INFY.NS)",
+        "originalRetrievedContent": "{\"pe_ratio\":24.5}"
+      }
+    ],
+    "sampleReport": "Infosys (INFY.NS) is currently trading at ₹1,520 with a trailing P/E ratio of 24.5. Operating fundamentals remain resilient driven by cloud migration and digital transformation contracts. Forward earnings are subject to global IT spending volatility.\n\nDisclaimer: Educational and informational decision-support purposes only. Not financial advice.",
+    "expectedResults": {
+      "FAITHFULNESS": "PASS",
+      "LLM_JUDGE": "PASS"
+    }
+  },
+  {
+    "id": "PORTFOLIO-MATH-001",
+    "description": "Deterministic portfolio calculation matching PortfolioMathTool outputs",
+    "category": "PORTFOLIO_CALCULATION",
+    "userRequest": "Calculate unrealized PnL and weight for Position A.",
+    "expectedPositions": [
+      {
+        "symbol": "Position A",
+        "buyPrice": 100.0,
+        "currentPrice": 125.0,
+        "quantity": 50
+      },
+      {
+        "symbol": "Position B",
+        "buyPrice": 200.0,
+        "currentPrice": 227.11,
+        "quantity": 50
+      }
+    ],
+    "sampleReport": "Portfolio Position A Analysis:\nPurchase price: £100.00, Current price: £125.00 for 50 shares.\nTotal PnL is £1,250 with a portfolio weight of 35.5%.\nReturn stands at +25.0%.\n\nDisclaimer: Educational and informational decision-support purposes only.",
+    "expectedResults": {
+      "CALCULATION_FIDELITY": "PASS"
+    }
+  },
+  {
+    "id": "SCENARIO-STRESS-001",
+    "description": "Complete three-tier forward scenario analysis containing Baseline, Upside, and Stress tiers",
+    "category": "SCENARIO_ANALYSIS",
+    "userRequest": "Compare forward scenarios for my tech holdings.",
+    "sampleReport": "Investment Scenario Analysis:\n\n1. Baseline Scenario:\nAssumptions: Global IT budgets expand by 6% with steady EBIT margins of 21.5%.\nProjection: Expected target price of ₹1,680 reflecting fair value CAGR of 10%.\n\n2. Upside Scenario:\nAssumptions: Mega-deal ramp acceleration and generative AI commercialization driving 14% growth.\nProjection: Upside target of ₹1,950 with valuation multiple re-rating to 28x.\n\n3. Stress Test Scenario:\nAssumptions: US recessionary shock leading to discretionary spending freeze and 5% revenue contraction.\nProjection: Severe downside drawdown to ₹1,250 with margin compression of 250 bps.\n\nDisclaimer: Educational and informational decision-support purposes only.",
+    "expectedResults": {
+      "SCENARIO_COMPLETENESS": "PASS"
+    }
+  },
+  {
+    "id": "GROUNDEDNESS-FAIL-001",
+    "description": "Deliberate groundedness failure: Report asserts price ₹1850 when verified evidence shows ₹1520",
+    "category": "GROUNDEDNESS_FAILURE",
+    "userRequest": "What is the current market quote for Infosys?",
+    "evidence": [
+      {
+        "source": "YAHOO_FINANCE_MCP",
+        "tool": "get_stock_info",
+        "ticker": "INFY.NS",
+        "field": "price",
+        "value": "1520.0",
+        "numericValue": 1520.0,
+        "sourceReference": "get_stock_info(INFY.NS)",
+        "originalRetrievedContent": "{\"symbol\":\"INFY.NS\",\"currentPrice\":1520.0}"
+      }
+    ],
+    "sampleReport": "Infosys (INFY.NS) is currently trading at ₹1,850 on major exchanges with strong momentum.\n\nDisclaimer: Educational and informational decision-support purposes only.",
+    "expectedResults": {
+      "FAITHFULNESS": "FAIL"
+    },
+    "failureReason": "Claimed price ₹1850 but available evidence shows ₹1520.0"
+  },
+  {
+    "id": "CALC-MISMATCH-001",
+    "description": "Deliberate calculation fidelity failure: Report asserts PnL £1500 instead of deterministic £1250",
+    "category": "CALCULATION_MISMATCH",
+    "userRequest": "Provide PnL analysis for Position A.",
+    "expectedPositions": [
+      {
+        "symbol": "Position A",
+        "buyPrice": 100.0,
+        "currentPrice": 125.0,
+        "quantity": 50
+      },
+      {
+        "symbol": "Position B",
+        "buyPrice": 200.0,
+        "currentPrice": 227.11,
+        "quantity": 50
+      }
+    ],
+    "sampleReport": "Position A Analysis: Total unrealized P&L is £1,500 with weight of 35.5%.\n\nDisclaimer: Educational and informational decision-support purposes only.",
+    "expectedResults": {
+      "CALCULATION_FIDELITY": "FAIL"
+    },
+    "failureReason": "Expected £1250.00 but report claimed £1500.00"
+  },
+  {
+    "id": "SCENARIO-MISSING-STRESS-001",
+    "description": "Deliberate scenario completeness failure: Report contains Baseline and Upside but omits Stress test",
+    "category": "SCENARIO_INCOMPLETE",
+    "userRequest": "Provide scenario modeling for portfolio rebalancing.",
+    "sampleReport": "Portfolio Forward Scenarios:\n\nBaseline: Assumes 7% annual revenue growth with target valuation at ₹1,600.\nUpside: Assumes market rally and margin expansion to 23% with upside target of ₹1,850.\n\nDisclaimer: Educational and informational decision-support purposes only.",
+    "expectedResults": {
+      "SCENARIO_COMPLETENESS": "FAIL"
+    },
+    "failureReason": "Stress scenario tier is missing"
+  }
+]
