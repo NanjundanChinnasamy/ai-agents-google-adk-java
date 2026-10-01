@@ -8,6 +8,8 @@ import com.google.adk.finance.v3.agents.MarketResearchAgentFactory;
 import com.google.adk.finance.v4.FinanceAdvisorAgentV4Factory;
 import com.google.adk.finance.v5.FinanceAdvisorAgentV5Factory;
 import com.google.adk.finance.v5.YahooFinanceMcpClientManager;
+import com.google.adk.finance.v8.FinanceAdvisorAgentV8;
+import com.google.adk.finance.v8.evidence.EvidenceStore;
 import com.google.adk.socialspark.agents.DraftAgentFactory;
 import com.google.adk.socialspark.agents.ResearchAgentFactory;
 import com.google.adk.socialspark.agents.SocialPosterAgentFactory;
@@ -35,10 +37,11 @@ public final class AdkDevUiApplication {
         LlmAgent stockMarketResearchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
         LlmAgent financeAdvisorAgentV4 = FinanceAdvisorAgentV4Factory.createFinanceAdvisorAgentV4();
 
-        // Initialize Yahoo Finance MCP client for V5, V6 & V7
+        // Initialize Yahoo Finance MCP client for V5, V6, V7 & V8
         LlmAgent financeAdvisorAgentV5;
         LlmAgent financeAdvisorAgentV6;
         LlmAgent financeAdvisorAgentV7;
+        LlmAgent financeAdvisorAgentV8;
         try {
             YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager();
             mcpManager.start();
@@ -50,11 +53,13 @@ public final class AdkDevUiApplication {
             financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(mcpManager.getMcpToolset());
             financeAdvisorAgentV6 = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(mcpManager.getMcpToolset());
             financeAdvisorAgentV7 = com.google.adk.finance.v7.FinanceAdvisorAgentV7.createFinanceAdvisorAgentV7(mcpManager.getMcpToolset());
+            financeAdvisorAgentV8 = FinanceAdvisorAgentV8.create(mcpManager.getMcpToolset(), new EvidenceStore()).getAgent();
         } catch (Exception e) {
             System.err.println("Warning: Could not start Yahoo Finance MCP client: " + e.getMessage());
             financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(null);
             financeAdvisorAgentV6 = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(null);
             financeAdvisorAgentV7 = com.google.adk.finance.v7.FinanceAdvisorAgentV7.createFinanceAdvisorAgentV7(null);
+            financeAdvisorAgentV8 = FinanceAdvisorAgentV8.createWithoutMcp(new EvidenceStore()).getAgent();
         }
 
         // Boot Spring Boot ADK Web Server with static agent registration
@@ -69,7 +74,8 @@ public final class AdkDevUiApplication {
                 financeAdvisorAgentV4,
                 financeAdvisorAgentV5,
                 financeAdvisorAgentV6,
-                financeAdvisorAgentV7
+                financeAdvisorAgentV7,
+                financeAdvisorAgentV8
         );
     }
 

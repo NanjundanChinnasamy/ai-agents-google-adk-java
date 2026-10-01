@@ -138,6 +138,14 @@ tasks.register<JavaExec>("runFinanceV7") {
     standardInput = System.`in`
 }
 
+tasks.register<JavaExec>("runFinanceV8") {
+    group = "application"
+    description = "Run interactive direct CLI tester for Finance Advisor v8 (Input & Output Guardrails + Lifecycle Callbacks)"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v8.FinanceConsoleV8")
+    standardInput = System.`in`
+}
+
 
 tasks.register<JavaExec>("runYahooFinanceMcp") {
     group = "application"

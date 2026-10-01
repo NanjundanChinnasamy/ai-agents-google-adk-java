@@ -581,13 +581,88 @@ User Request: "Create an investment research report on Infosys and ensure import
 
 ---
 
-### Week 4 — Version 8: Guardrails, Safety & Callbacks (`finance.v8`)
+### Week 4 — Version 8: Guardrails, Safety & Lifecycle Callbacks (`finance.v8`)
 - **Package**: `com.google.adk.finance.v8`
-- **Guards & Callbacks**:
-  - `BeforeAgentCallback`: PII sanitization (masks account numbers, user names).
-  - `BeforeToolCallback`: Validates ticker symbols and execution limits.
-  - `AfterModelCallback`: Enforces mandatory financial disclaimer ("Not financial or investment advice").
-  - `HallucinationDetector`: Cross-checks cited tickers in the final report against the original portfolio state.
+- **Core Files**:
+  - [`FinanceAdvisorAgentV8.java`](src/main/java/com/google/adk/finance/v8/FinanceAdvisorAgentV8.java): Root orchestrator wiring the 5-stage callback perimeter, research sub-agent, mock trading harness, and CLI runner.
+  - [`FinanceConsoleV8.java`](src/main/java/com/google/adk/finance/v8/FinanceConsoleV8.java): Dedicated interactive CLI console supporting real-time guardrail introspection, evidence inspection, and automated test triggers.
+  - **Guardrail Layer (`com.google.adk.finance.v8.guardrails`)**:
+    - [`GuardrailResult.java`](src/main/java/com/google/adk/finance/v8/guardrails/GuardrailResult.java): Standardized immutable result contract (`ALLOW`, `BLOCK`, `SANITIZE`, `WARN`) with name, reason, sanitized output, and contextual metadata.
+    - [`PiiDetector.java`](src/main/java/com/google/adk/finance/v8/guardrails/input/PiiDetector.java): High-precision pattern detector for sensitive financial identifiers (credit cards, bank accounts, emails, phone numbers, PAN, SSN, Aadhaar, customer IDs).
+    - [`PiiSanitizer.java`](src/main/java/com/google/adk/finance/v8/guardrails/input/PiiSanitizer.java): Deterministic redaction engine substituting sensitive values with privacy tokens (`[REDACTED_...]`).
+    - [`PromptInjectionDetector.java`](src/main/java/com/google/adk/finance/v8/guardrails/input/PromptInjectionDetector.java): Defends against system prompt overrides, secret/prompt extraction (`reveal system prompt`), tool manipulation ("call every tool"), and jailbreaking.
+    - [`TickerValidator.java`](src/main/java/com/google/adk/finance/v8/guardrails/tool/TickerValidator.java): Validates ticker symbol conventions (NSE `.NS`, BSE `.BO`, US tickers), enforces length boundaries (<= 15 chars), and categorically rejects SQL/shell injection vectors.
+    - [`ToolOperationGuard.java`](src/main/java/com/google/adk/finance/v8/guardrails/tool/ToolOperationGuard.java): Authorizes analytical read-only tools and categorically blocks transactional operations (`execute_trade`, `place_order`, `transfer_funds`).
+    - [`OffensiveLanguageDetector.java`](src/main/java/com/google/adk/finance/v8/guardrails/output/OffensiveLanguageDetector.java): Scans model outputs for toxic or abusive language, substituting deterministic safe responses.
+    - [`ComplianceDisclaimerGuard.java`](src/main/java/com/google/adk/finance/v8/guardrails/output/ComplianceDisclaimerGuard.java): Inspects and appends mandatory institutional non-advice regulatory disclaimers.
+    - [`HallucinationDetector.java`](src/main/java/com/google/adk/finance/v8/guardrails/output/HallucinationDetector.java): Audits model numerical assertions (prices, metrics) against empirical observations stored in `EvidenceStore` (1% tolerance).
+  - **Callback Interception Layer (`com.google.adk.finance.v8.callbacks`)**:
+    - [`BeforeAgentGuardrail.java`](src/main/java/com/google/adk/finance/v8/callbacks/BeforeAgentGuardrail.java): Implements `BeforeAgentCallbackSync`. Evaluates user input before execution; halts prompt injections early via `invocationContext.setEndInvocation(true)`, and stores sanitized input into session state.
+    - [`BeforeModelGuardrail.java`](src/main/java/com/google/adk/finance/v8/callbacks/BeforeModelGuardrail.java): Implements `BeforeModelCallbackSync`. Wire-level defense scrubbing raw PII from `LlmRequest` contents before outbound dispatch to the model.
+    - [`BeforeToolGuardrail.java`](src/main/java/com/google/adk/finance/v8/callbacks/BeforeToolGuardrail.java): Implements `BeforeToolCallbackSync`. Authorizes tool invocation and validates ticker arguments before external execution, returning an override map to prevent unauthorized runs.
+    - [`AfterToolEvidenceCapture.java`](src/main/java/com/google/adk/finance/v8/callbacks/AfterToolEvidenceCapture.java): Implements `AfterToolCallbackSync`. Automatically extracts structured empirical observations from tool outputs into `EvidenceStore`.
+    - [`AfterModelGuardrail.java`](src/main/java/com/google/adk/finance/v8/callbacks/AfterModelGuardrail.java): Implements `AfterModelCallbackSync`. Coordinates toxic language replacement, numerical fact auditing against `EvidenceStore`, and mandatory disclaimer injection.
+  - **Evidence Repository (`com.google.adk.finance.v8.evidence`)**:
+    - [`EvidenceStore.java`](src/main/java/com/google/adk/finance/v8/evidence/EvidenceStore.java): Thread-safe in-memory fact store capturing quotes, prices, and metrics from tool outputs for hallucination detection.
+  - **Sub-Agents (`com.google.adk.finance.v8.subagents`)**:
+    - [`GuardedMarketResearchAgentV8.java`](src/main/java/com/google/adk/finance/v8/subagents/GuardedMarketResearchAgentV8.java): Isolated Google Search sub-agent wrapped with V8 guardrail callbacks.
+    - [`MockTradingAgentV8.java`](src/main/java/com/google/adk/finance/v8/subagents/MockTradingAgentV8.java): Prohibited transactional tool harness verifying that `execute_trade` is strictly blocked by `BeforeToolGuardrail`.
+- **ADK Classes & Concepts Learned**:
+  - `com.google.adk.agents.callbacks.BeforeAgentCallbackSync`: Intercepting initial user prompt, mutating state, or aborting execution via `InvocationContext.setEndInvocation(true)`.
+  - `com.google.adk.agents.callbacks.BeforeModelCallbackSync`: Intercepting `LlmRequest` before wire transmission to sanitize prompt contents.
+  - `com.google.adk.agents.callbacks.BeforeToolCallbackSync`: Intercepting tool name and args, returning `Optional<Map<String, Object>>` override to short-circuit execution.
+  - `com.google.adk.agents.callbacks.AfterToolCallbackSync`: Capturing empirical tool execution outputs without altering tool response.
+  - `com.google.adk.agents.callbacks.AfterModelCallbackSync`: Intercepting `LlmResponse` to inspect, sanitize, fact-audit, or substitute final generated text.
+- **5-Stage Defensive Interception Topology**:
+  ```
+                     USER INPUT
+                         │
+                         ▼
+             [Stage 1: BeforeAgentGuardrail]
+             ├── PiiDetector (Detect sensitive tokens)
+             ├── PiiSanitizer (Generate redacted prompt)
+             ├── PromptInjectionDetector (Check override / exfiltration)
+             │   └── If Injection: setEndInvocation(true) -> Return User-Safe Rejection
+             └── Else: Store sanitized_user_input in session state
+                         │
+                         ▼
+             [Stage 2: BeforeModelGuardrail]
+             └── Scrub raw PII from LlmRequest contents before wire transmission
+                         │
+                         ▼
+                   LLM AGENT / MODEL
+                         │
+                 (Tool Decision Made)
+                         │
+                         ▼
+             [Stage 3: BeforeToolGuardrail]
+             ├── ToolOperationGuard (Verify read-only vs transactional)
+             │   └── If Transactional (e.g. execute_trade): Return Tool Override (BLOCKED)
+             ├── TickerValidator (Validate format & check SQL/shell injection)
+             │   └── If Invalid / Injected: Return Tool Override (BLOCKED)
+             └── Else: Allow external tool execution
+                         │
+                         ▼
+               TOOL EXECUTION (MCP / Search)
+                         │
+                         ▼
+             [Stage 4: AfterToolEvidenceCapture]
+             └── Ingest output facts (Ticker, Price, Metrics) into EvidenceStore
+                         │
+                         ▼
+                   LLM AGENT / MODEL
+                 (Synthesizes Response)
+                         │
+                         ▼
+             [Stage 5: AfterModelGuardrail]
+             ├── OffensiveLanguageDetector (Check toxicity -> Replace with safe fallback)
+             ├── HallucinationDetector (Audit claimed figures vs EvidenceStore facts)
+             │   └── If Mismatch > 1%: Append factual discrepancy warning
+             └── ComplianceDisclaimerGuard (Verify & append mandatory non-advice disclaimer)
+                         │
+                         ▼
+                   FINAL RESPONSE
+  ```
 
 ---
 
@@ -899,6 +974,34 @@ ai-agents-google-adk-java/
     │   │               ├── ComplianceEvidenceCriticAgentV7.java # Quality critic with ExitLoopTool
     │   │               └── FinalReportPresenterAgentV7.java   # Final presenter of audited report
     │   │
+    │   │       └── v8/                                # Week 4: Guardrails, Safety & Callbacks
+    │   │           ├── FinanceAdvisorAgentV8.java             # Root orchestrator with full callback perimeter
+    │   │           ├── FinanceConsoleV8.java                  # Interactive CLI runner for guardrails
+    │   │           ├── guardrails/                            # Deterministic Guardrails
+    │   │           │   ├── GuardrailResult.java               # Standardized result contract (ALLOW, BLOCK, SANITIZE, WARN)
+    │   │           │   ├── input/
+    │   │           │   │   ├── PiiDetector.java               # Regex detector for account/card/phone/email/PAN/SSN
+    │   │           │   │   ├── PiiSanitizer.java              # Masks PII with privacy tokens ([REDACTED_...])
+    │   │           │   │   └── PromptInjectionDetector.java   # Detects overrides, secrets, and jailbreaks
+    │   │           │   ├── tool/
+    │   │           │   │   ├── TickerValidator.java           # Validates symbols (.NS, .BO, US) and blocks injection
+    │   │           │   │   └── ToolOperationGuard.java        # Authorizes analytics & blocks trade execution
+    │   │           │   └── output/
+    │   │           │       ├── OffensiveLanguageDetector.java # Screens toxic/abusive terms with safe fallback
+    │   │           │       ├── ComplianceDisclaimerGuard.java # Injects mandatory institutional non-advice disclaimers
+    │   │           │       └── HallucinationDetector.java     # Audits model claims against empirical EvidenceStore
+    │   │           ├── callbacks/                             # Google ADK Lifecycle Interceptions
+    │   │           │   ├── BeforeAgentGuardrail.java          # BeforeAgentCallbackSync (PII check & injection halt)
+    │   │           │   ├── BeforeModelGuardrail.java          # BeforeModelCallbackSync (Wire-level PII scrubber)
+    │   │           │   ├── BeforeToolGuardrail.java           # BeforeToolCallbackSync (Tool auth & ticker validation)
+    │   │           │   ├── AfterToolEvidenceCapture.java      # AfterToolCallbackSync (Empirical fact capture)
+    │   │           │   └── AfterModelGuardrail.java           # AfterModelCallbackSync (Toxicity, facts & disclaimer)
+    │   │           ├── evidence/
+    │   │           │   └── EvidenceStore.java                 # Thread-safe empirical fact repository
+    │   │           └── subagents/
+    │   │               ├── GuardedMarketResearchAgentV8.java  # Isolated search sub-agent with V8 callbacks
+    │   │               └── MockTradingAgentV8.java            # Prohibited trading harness for tool-block testing
+    │   │
     │   └── resources/
     │       └── logback.xml                    # SLF4J / Logback console logging configuration
     │
@@ -928,8 +1031,17 @@ ai-agents-google-adk-java/
                 │   └── FinanceV5IntegrationTest.java
                 ├── v6/
                 │   └── FinanceV6IntegrationTest.java
-                └── v7/
-                    └── FinanceV7IntegrationTest.java
+                ├── v7/
+                │   └── FinanceV7IntegrationTest.java
+                └── v8/
+                    ├── GuardrailResultTest.java
+                    ├── PiiGuardrailTest.java
+                    ├── PromptInjectionGuardrailTest.java
+                    ├── ToolGuardrailsTest.java
+                    ├── OutputGuardrailsTest.java
+                    ├── EvidenceStoreTest.java
+                    ├── LifecycleCallbacksTest.java
+                    └── FinanceAdvisorAgentV8Test.java
 ```
 
 ---
@@ -1007,6 +1119,10 @@ The application provides three complementary ways to run and test both Social Sp
   - Class: [`FinanceConsoleV7.java`](src/main/java/com/google/adk/finance/v7/FinanceConsoleV7.java)
   - Launcher: `.\test-finance-v7.bat` (or Gradle: `.\gradlew.bat runFinanceV7 --console=plain -q`)
   - Features: 3 deterministic workflow engines: Sequential 5-Stage Pipeline (`run_sequential_research_workflow`), Parallel Fan-Out/In with failure tolerance (`run_parallel_portfolio_research_workflow`), and Iterative Research-Critic Loop with `ExitLoopTool` dynamic stopping (`run_critic_loop_research_workflow`).
+- **Finance Advisor v8 Console (Guardrails & Lifecycle Callbacks)**:
+  - Class: [`FinanceConsoleV8.java`](src/main/java/com/google/adk/finance/v8/FinanceConsoleV8.java)
+  - Launcher: `.\test-finance-v8.bat` (or Gradle: `.\gradlew.bat runFinanceV8 --console=plain -q`)
+  - Features: 5-stage lifecycle interception (`BeforeAgent`, `BeforeModel`, `BeforeTool`, `AfterTool`, `AfterModel`), PII detection & masking (`test-pii`), prompt injection halting (`test-injection`), unauthorized trade execution blocking (`test-trade`), empirical fact tracking in `EvidenceStore` (`facts`), numerical hallucination detection (`test-hallucination`), and regulatory disclaimer enforcement.
 
 
 ---
