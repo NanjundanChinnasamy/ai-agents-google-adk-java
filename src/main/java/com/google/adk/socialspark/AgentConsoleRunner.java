@@ -58,6 +58,7 @@ public final class AgentConsoleRunner {
         System.out.println("  'finance_v3 <p>'   : Test finance_advisor_v3 directly");
         System.out.println("  'finance_v4 <p>'   : Test finance_advisor_v4 directly");
         System.out.println("  'finance_v5 <p>'   : Test finance_advisor_v5 directly");
+        System.out.println("  'finance_v6 <p>'   : Test finance_advisor_v6 directly");
         System.out.println("--------------------------------------------------\n");
 
         try (Scanner scanner = new Scanner(System.in)) {
@@ -124,6 +125,14 @@ public final class AgentConsoleRunner {
                 String financePrompt = input.substring(prefixLen).trim();
                 System.out.println("\n[Testing finance_advisor_v5 directly...]");
                 testFinanceV5Directly(financePrompt);
+                continue;
+            }
+
+            if (input.toLowerCase().startsWith("finance_v6 ") || input.toLowerCase().startsWith("finance_advisor_v6 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v6 ") ? "finance_v6 ".length() : "finance_advisor_v6 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v6 directly...]");
+                testFinanceV6Directly(financePrompt);
                 continue;
             }
 
@@ -435,6 +444,45 @@ public final class AgentConsoleRunner {
         }
     }
 
+    private static void testFinanceV6Directly(String prompt) {
+        try (YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager()) {
+            mcpManager.start();
+            LlmAgent agent = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(mcpManager.getMcpToolset());
+            Runner runner = new InMemoryRunner(agent, com.google.adk.finance.v6.FinanceAdvisorAgentV6.AGENT_NAME);
+            Content userContent = Content.builder()
+                    .role("user")
+                    .parts(List.of(Part.fromText(prompt)))
+                    .build();
+
+            Flowable<Event> flow = runner.runAsync(
+                    "cli-tester",
+                    "finance-v6-cli",
+                    userContent,
+                    RunConfig.builder().build(),
+                    new HashMap<>()
+            );
+
+            System.out.print("\nFinance Advisor v6 > ");
+            flow.blockingForEach(event -> {
+                if (event.content().isPresent()) {
+                    for (Part p : event.content().get().parts().orElse(List.of())) {
+                        p.functionCall().ifPresent(fc ->
+                                System.out.println("\n[Delegation / Tool Call] -> " + fc.name() + "(" + fc.args() + ")")
+                        );
+                        p.functionResponse().ifPresent(fr ->
+                                System.out.println("[Specialist Response] <- " + fr.name() + " returned.")
+                        );
+                        p.text().ifPresent(System.out::print);
+                    }
+                }
+            });
+            System.out.println();
+        } catch (Exception e) {
+            System.err.println("\n[Error running finance_advisor_v6]: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private static void runTurn(String prompt, Map<String, Object> state, boolean printOutput) {
         if (prompt.toLowerCase().startsWith("draft_only ")) {
             testDraftAgentDirectly(prompt.substring("draft_only ".length()).trim());
@@ -463,6 +511,11 @@ public final class AgentConsoleRunner {
         if (prompt.toLowerCase().startsWith("finance_v5 ") || prompt.toLowerCase().startsWith("finance_advisor_v5 ")) {
             int len = prompt.toLowerCase().startsWith("finance_v5 ") ? "finance_v5 ".length() : "finance_advisor_v5 ".length();
             testFinanceV5Directly(prompt.substring(len).trim());
+            return;
+        }
+        if (prompt.toLowerCase().startsWith("finance_v6 ") || prompt.toLowerCase().startsWith("finance_advisor_v6 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v6 ") ? "finance_v6 ".length() : "finance_advisor_v6 ".length();
+            testFinanceV6Directly(prompt.substring(len).trim());
             return;
         }
         Runner runner = new InMemoryRunner(SocialPosterAgentFactory.createRootAgent(), "social_poster");

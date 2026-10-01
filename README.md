@@ -97,6 +97,17 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Multi-Source Intelligence Triangulation**: Seamlessly unifies Yahoo Finance MCP (structured quotes, financials, analyst ratings), Google Search (breaking news via `stockmarket_researcher`), curated domain skills, grounding knowledge, SQLite customer portfolio state, and deterministic Java math.
   - **Process Lifecycle & Graceful Shutdown**: Subprocess management preventing orphaned processes via JVM shutdown hooks and clean `McpToolset.close()` execution.
   - **Reference Guide**: See comprehensive architectural blueprint in [`docs/finance-agent-v5.md`](docs/finance-agent-v5.md).
+- **Week 3 — Version 6 (`finance.v6`)**:
+  - **Specialist Multi-Agent System & Division of Labor**: Introduces 5 independent sub-agents with narrow responsibilities:
+    1. `stockmarket_researcher` (`MarketResearchAgentV6`): Real-time web retrieval via `GoogleSearchTool.INSTANCE` and 8-stage market research framework to identify why asset prices changed.
+    2. `scenario_analyst` (`ScenarioAnalystAgentV6`): Quantitative macro modeling (Baseline, Bull, Bear) and stress-testing portfolio sensitivity against rate hikes and corrections.
+    3. `report_writer` (`ReportWriterAgentV6`): Synthesizes multi-agent research notes, fundamentals, and scenario findings into an executive decision-support report.
+    4. `fundamental_analysis_agent` (`FundamentalAnalysisAgentV6`): Structured valuation multiples, financial statements, and analyst targets via Yahoo Finance MCP.
+    5. `portfolio_risk_agent` (`PortfolioRiskAgentV6`): Investment risk, beta sensitivity, volatility, and concentration alerts (>25%) via MCP and math.
+  - **Root Orchestrator (`portfolio_director` / `FinanceAdvisorAgentV6`)**: Delegates work to sub-agents via `AgentTool`, conducts user alignment, and synthesizes institutional decision-support reports.
+  - **Standardized Output Contracts**: Structured sub-agent report format (`[SUB-AGENT REPORT: ...]`, Specialist, Task, Key Findings, Sources, Limitations).
+  - **Failure Isolation & Graceful Degradation**: Survives specialist failures with clear limitation notices rather than failing the overall analysis.
+  - **Reference Guide**: See [`docs/finance-agent-v6.md`](docs/finance-agent-v6.md) and [`v6/README.md`](v6/README.md).
 
 ---
 
@@ -116,9 +127,15 @@ ai-agents-google-adk-java/
 ├── test-finance-v3.bat / .sh  # Dedicated CLI runner for Finance Agent v3
 ├── test-finance-v4.bat / .sh  # Dedicated CLI runner for Finance Advisor v4
 ├── test-finance-v5.bat / .sh  # Dedicated CLI runner for Finance Advisor v5 (Yahoo Finance MCP)
+├── test-finance-v6.bat / .sh  # Dedicated CLI runner for Finance Advisor v6 (Sub-Agents)
 ├── .env.example               # Environment variables template
 ├── docs/                      # Technical documentation and milestone references
-│   └── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
+│   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
+│   └── finance-agent-v6.md    # Architecture and implementation guide for V6 Sub-Agents
+├── v6/                        # Milestone V6 documentation and architectural references
+│   ├── README.md              # V6 overview & evolutionary comparison
+│   └── sub-agents/            # Specialized sub-agent architectural specifications
+│       └── README.md
 ├── knowledge/                 # Curated finance domain grounding knowledge (glossary, valuation, risk, etc.)
 ├── skills/                    # Agent Skills (Social Spark & Finance Domain Skills)
 │   ├── brand-voice/           # Social Spark: Brand tone & British English rules
@@ -189,10 +206,20 @@ ai-agents-google-adk-java/
     │   │       │   ├── FinanceAdvisorAgentV4Factory.java      # Root advisor factory wiring skills, knowledge & search
     │   │       │   └── FinanceConsoleV4.java                  # Interactive skills & knowledge CLI console
     │   │       │
-    │   │       └── v5/                                # Week 3: Yahoo Finance MCP Integration
-    │   │           ├── YahooFinanceMcpClientManager.java      # Client lifecycle, subprocess launch & readiness
-    │   │           ├── FinanceAdvisorAgentV5Factory.java      # Root advisor factory wiring MCP toolset & search
-    │   │           └── FinanceConsoleV5.java                  # Interactive MCP console & tool execution tracing
+    │   │       ├── v5/                                # Week 3: Yahoo Finance MCP Integration
+    │   │       │   ├── YahooFinanceMcpClientManager.java      # Client lifecycle, subprocess launch & readiness
+    │   │       │   ├── FinanceAdvisorAgentV5Factory.java      # Root advisor factory wiring MCP toolset & search
+    │   │       │   └── FinanceConsoleV5.java                  # Interactive MCP console & tool execution tracing
+    │   │       │
+    │   │       └── v6/                                # Week 3: Specialist Multi-Agent System
+    │   │           ├── FinanceAdvisorAgentV6.java             # Root orchestrator (portfolio_director)
+    │   │           ├── FinanceConsoleV6.java                  # Interactive CLI runner with delegation observability
+    │   │           └── subagents/                             # Specialized Sub-Agents (Narrow responsibilities)
+    │   │               ├── MarketResearchAgentV6.java         # stockmarket_researcher: Google Search & news attribution
+    │   │               ├── ScenarioAnalystAgentV6.java        # scenario_analyst: Bull/Bear macro stress-testing
+    │   │               ├── ReportWriterAgentV6.java           # report_writer: Synthesizes institutional decision report
+    │   │               ├── FundamentalAnalysisAgentV6.java    # fundamental_analysis_agent: Yahoo Finance MCP fundamentals
+    │   │               └── PortfolioRiskAgentV6.java          # portfolio_risk_agent: Volatility, beta, concentration & risk
     │   │
     │   └── resources/logback.xml                      # Logging configuration
     │
@@ -220,8 +247,10 @@ ai-agents-google-adk-java/
                 │   └── FinanceV3IntegrationTest.java
                 ├── v4/
                 │   └── FinanceV4IntegrationTest.java
-                └── v5/
-                    └── FinanceV5IntegrationTest.java
+                ├── v5/
+                │   └── FinanceV5IntegrationTest.java
+                └── v6/
+                    └── FinanceV6IntegrationTest.java
 ```
 
 ---
@@ -565,6 +594,53 @@ Run the institutional-grade financial research advisor connecting Google ADK Jav
 - **Graceful Process Shutdown**: Uses JVM shutdown hooks to ensure child MCP processes terminate cleanly without zombies.
 - **Documentation**: See [`docs/finance-agent-v5.md`](docs/finance-agent-v5.md) for full architecture and sequence diagrams.
 
+#### Week 3 — Version 6: Specialist Multi-Agent System (`finance.v6`)
+Run the parent orchestrator advisor (`portfolio_director` / `FinanceAdvisorAgentV6`) that delegates to 5 independent sub-agents (`stockmarket_researcher`, `scenario_analyst`, `report_writer`, `fundamental_analysis_agent`, and `portfolio_risk_agent`) and synthesizes their structured findings:
+```bash
+# Windows
+.\test-finance-v6.bat
+
+# macOS / Linux
+./test-finance-v6.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV6 --console=plain -q
+
+# One-shot queries:
+# 1. Delegation to Market Research Sub-Agent (Price Change Attribution):
+.\test-finance-v6.bat "What happened with Infosys this week? Why did the price change?"
+
+# 2. Delegation to Fundamental Analysis Sub-Agent:
+.\test-finance-v6.bat "What are Infosys' latest fundamentals, valuation multiples, and profit margins?"
+
+# 3. Delegation to Portfolio Risk Sub-Agent:
+.\test-finance-v6.bat "What are the major risks of investing in Infosys? How volatile is it?"
+
+# 4. Delegation to Scenario Analyst Sub-Agent:
+.\test-finance-v6.bat "Model bull and bear scenarios for Infosys and stress-test against a rate hike."
+
+# 5. Delegation to Report Writer Sub-Agent:
+.\test-finance-v6.bat "Synthesize an executive decision-support report for my portfolio holdings."
+
+# 6. Multi-Specialist Synthesis (All Specialists):
+.\test-finance-v6.bat "Give me a current view of Infosys: what has happened recently, how are the fundamentals, what are the key risks, and compare bull/bear scenarios?"
+
+# 7. Customer Portfolio Ingestion & Multi-Specialist Analysis:
+.\test-finance-v6.bat "I am customer 1001. Load my portfolio and evaluate the fundamental health and risk of my holdings."
+```
+
+**Key Architectural Features in V6:**
+- **Root Orchestrator (`portfolio_director` / `FinanceAdvisorAgentV6`)**: Focuses on workflow orchestration, user alignment, specialist routing, result aggregation, and institutional decision-support synthesis.
+- **Division of Labor Across 5 Specialized Sub-Agents**:
+  1. `stockmarket_researcher` (`MarketResearchAgentV6`): Google Search web grounding & 8-stage market research methodology to identify why asset prices changed.
+  2. `scenario_analyst` (`ScenarioAnalystAgentV6`): Quantitative macro modeling (Baseline, Bull, Bear) and stress-testing portfolio sensitivity against rate hikes and corrections.
+  3. `report_writer` (`ReportWriterAgentV6`): Synthesizes multi-agent research notes into an institutional decision-support report (Thesis, Evidence Matrix, Scenario Table, Risk Flags, Disclaimers).
+  4. `fundamental_analysis_agent` (`FundamentalAnalysisAgentV6`): Yahoo Finance MCP structured metrics, financial statements, and valuation multiples.
+  5. `portfolio_risk_agent` (`PortfolioRiskAgentV6`): Market beta ($\beta$), 52-week price range spread, financial leverage, and single-stock concentration alerts (>25%).
+- **Standardized Sub-Agent Output Contracts**: Predictable output blocks (`[SUB-AGENT REPORT: ...]`, Specialist, Task, Key Findings, Sources, Limitations).
+- **Failure Isolation & Graceful Degradation**: Catches or observes specialist unavailability without crashing the overall advisory pipeline.
+- **Documentation**: See [`docs/finance-agent-v6.md`](docs/finance-agent-v6.md), [`v6/README.md`](v6/README.md), and [`v6/sub-agents/README.md`](v6/sub-agents/README.md).
+
 ---
 
 ### 5. Model Context Protocol (MCP) Server: Yahoo Finance (Java)
@@ -610,5 +686,9 @@ See [`mcp/README.md`](mcp/README.md) for full configuration blocks for Claude De
 
 # Run only Finance Advisor V5 integration tests:
 ./gradlew test --tests com.google.adk.finance.v5.*
+
+# Run only Finance Advisor V6 integration tests:
+./gradlew test --tests com.google.adk.finance.v6.*
 ```
+
 

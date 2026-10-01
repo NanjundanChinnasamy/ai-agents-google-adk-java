@@ -336,15 +336,79 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 ---
 
 ### Week 3 — Version 6: Specialist Multi-Agent System (`finance.v6`)
-- **Package**: `com.google.adk.finance.v6`
-- **Specialist Roles**:
-  1. `stockmarket_researcher`: Queries Google Search and Market MCP tools to identify why asset prices changed.
-  2. `scenario_analyst`: Models bull, bear, and baseline macro scenarios based on portfolio weights.
-  3. `report_writer`: Synthesizes research and scenario findings into an executive decision-support report.
-  4. `portfolio_director` (Root): Orchestrates the workflow, delegates to specialists, and conducts user alignment.
-- **ADK Classes Learned**:
-  - `com.google.adk.tools.AgentTool`
-  - Multi-agent state isolation and delegation hierarchies.
+- **Package**: `com.google.adk.finance.v6` and `com.google.adk.finance.v6.subagents`
+- **Documentation**: See comprehensive guides in [`docs/finance-agent-v6.md`](docs/finance-agent-v6.md), [`v6/README.md`](v6/README.md), and [`v6/sub-agents/README.md`](v6/sub-agents/README.md).
+- **Core Files**:
+  - [`FinanceAdvisorAgentV6.java`](src/main/java/com/google/adk/finance/v6/FinanceAdvisorAgentV6.java): Root orchestrator (`portfolio_director` / `finance_advisor_v6`) delegating inquiries to specialists via `AgentTool`.
+  - [`FinanceConsoleV6.java`](src/main/java/com/google/adk/finance/v6/FinanceConsoleV6.java): Interactive terminal CLI runner with real-time sub-agent delegation tracking and lifecycle callbacks.
+  - [`MarketResearchAgentV6.java`](src/main/java/com/google/adk/finance/v6/subagents/MarketResearchAgentV6.java): Specialist sub-agent (`stockmarket_researcher`) for live public-web developments and price change attribution via `GoogleSearchTool.INSTANCE`.
+  - [`ScenarioAnalystAgentV6.java`](src/main/java/com/google/adk/finance/v6/subagents/ScenarioAnalystAgentV6.java): Specialist sub-agent (`scenario_analyst`) modeling Baseline, Bull, and Bear macro scenarios and portfolio stress-testing.
+  - [`ReportWriterAgentV6.java`](src/main/java/com/google/adk/finance/v6/subagents/ReportWriterAgentV6.java): Specialist sub-agent (`report_writer`) synthesizing multi-agent research notes into an institutional decision-support report.
+  - [`FundamentalAnalysisAgentV6.java`](src/main/java/com/google/adk/finance/v6/subagents/FundamentalAnalysisAgentV6.java): Specialist sub-agent (`fundamental_analysis_agent`) for company fundamentals, valuation multiples, and financial statements via Yahoo Finance MCP.
+  - [`PortfolioRiskAgentV6.java`](src/main/java/com/google/adk/finance/v6/subagents/PortfolioRiskAgentV6.java): Specialist sub-agent (`portfolio_risk_agent`) for market sensitivity (beta), volatility, capital structure leverage, and concentration alerts (>25%).
+  - [`FinanceV6IntegrationTest.java`](src/test/java/com/google/adk/finance/v6/FinanceV6IntegrationTest.java): Comprehensive integration test suite validating sub-agent configurations, parent delegation, multi-specialist synthesis, and failure isolation.
+- **Root Orchestrator & Specialist Roles**:
+  1. `portfolio_director` (Root Orchestrator): Interprets user intent, manages session state, routes tasks to specialists via `AgentTool`, and conducts user alignment and multi-specialist synthesis.
+  2. `stockmarket_researcher`: Queries Google Search and collaborates with market data tools to identify why asset prices changed, investigate real-time corporate announcements, earnings release reactions, C-suite changes, and macro catalysts using `GoogleSearchTool.INSTANCE` and the 8-stage market research framework.
+  3. `scenario_analyst`: Models forward-looking macro scenarios (Baseline, Bull, Bear) and stress-tests portfolio asset allocations against interest rate shocks, tech corrections, and multiple compression using Yahoo Finance MCP, deterministic math (`PortfolioMathTool`), and curated risk frameworks.
+  4. `report_writer`: Synthesizes disparate specialist research notes, quantitative fundamentals, and scenario models into an executive decision-support report featuring thesis, evidence matrix, scenario table, and risk flags.
+  5. `fundamental_analysis_agent`: Analyzes quantitative company metrics, financial statements, and valuation ratios using Yahoo Finance MCP tools (`get_stock_info`, `get_financial_statement`, `get_stock_actions`, `get_recommendations`) and curated valuation frameworks.
+  6. `portfolio_risk_agent`: Evaluates structural risk, beta sensitivity, volatility, and portfolio-level concentration hazards (>25%) using Yahoo Finance MCP, deterministic math (`PortfolioMathTool`), and curated risk frameworks.
+- **ADK Classes & Concepts Learned**:
+  - `com.google.adk.tools.AgentTool`: Wrapping independent sub-agents as callable tools for the parent orchestrator.
+  - **Multi-Agent State Isolation & Delegation Hierarchies**: Keeping sub-agents independent with isolated execution contexts and toolsets.
+  - **Gemini Search Grounding Exclusivity Resolution**: Separating `GoogleSearchTool.INSTANCE` into its own sub-agent turn (`stockmarket_researcher`) so client MCP function tools can be used by other specialists without API conflicts.
+  - **Standardized Sub-Agent Output Contract**: Requiring each sub-agent to produce structured reports with explicit identification, task, findings, sources, and limitations.
+  - **Multi-Specialist Synthesis**: Invoking multiple sub-agents in a single turn for multi-faceted questions and synthesizing a cohesive institutional decision-support response.
+  - **Failure Isolation & Graceful Degradation**: Isolating specialist unavailability so that failure of one sub-agent does not crash the overall advisory pipeline.
+- **Sub-Agent Delegation Architecture**:
+  ```
+                                      User Inquiry
+                                           │
+                                           ▼
+                            +──────────────────────────────+
+                            |      portfolio_director      |
+                            |    (FinanceAdvisorAgentV6)   |
+                            |   Workflow Orchestration &   |
+                            |   Multi-Specialist Synthesis |
+                            +──────────────┬───────────────+
+                                           │
+       ┌────────────────────┬──────────────┼──────────────┬────────────────────┐
+       │                    │              │              │                    │
+ [Delegation 1]       [Delegation 2] [Delegation 3] [Delegation 4]        [Delegation 5]
+       │                    │              │              │                    │
+       ▼                    ▼              ▼              ▼                    ▼
++───────────────────+ +─────────────────+ +────────────────+ +──────────────────+ +──────────────────+
+|stockmarket_res.   | |fundamental_agent| |portfolio_risk  | |scenario_analyst  | |report_writer     |
+|"Why did asset     | |"Quantitative    | |"Identify beta, | |"Model Bull/Bear  | |"Synthesize       |
+| prices change?"   | | fundamentals &  | | volatility &   | | scenarios &      | | executive        |
+|                   | | multiples"      | | concentration" | | stress-test"     | | decision report" |
++─────────┬─────────+ +────────┬────────+ +────────┬───────+ +────────┬─────────+ +────────┬─────────+
+       │                    │                   │                  │                    │
+       ▼                    ▼                   ▼                  ▼                    ▼
++───────────────────+ +─────────────────+ +────────────────+ +──────────────────+ +──────────────────+
+| GoogleSearchTool  | |Yahoo Finance MCP| |Yahoo Finance   | |Yahoo Finance MCP | |Project Knowledge |
+| (Live Web News &  | |(Stock info,     | |(Beta, 52-wk)   | |(Beta & Multiples)| |(Curated Briefing |
+|  attributions)    | | statements,     | |+ PortfolioMath | |+ PortfolioMath   | | Frameworks)      |
+| + 8-Stage Research| | recommendations)| |+ Risk Framework| |+ Risk Framework  | |+ Domain Skills   |
++─────────┬─────────+ +────────┬────────+ +────────┬───────+ +────────┬─────────+ +────────┬─────────+
+       │                    │                   │                  │                    │
+       └────────────────────┴──────────────┬────┴──────────────────┴────────────────────┘
+                                           │ Standardized Sub-Agent Reports
+                                           ▼
+                            +──────────────────────────────+
+                            |  portfolio_director Synthesis|
+                            | - Executive Strategic Thesis |
+                            | - Multi-Specialist Evidence  |
+                            | - Macro Scenario Matrix      |
+                            | - Risk Flags & Disclaimers   |
+                            +──────────────┬───────────────+
+                                           │
+                                           ▼
+                                      Final Answer
+
+  ```
+- **What V6 Deliberately Does NOT Introduce**: Sequential workflows, parallel fan-out/fan-in, loop/critic agents, guardrails/PII filtering, or autonomous trading.
 
 ---
 

@@ -35,8 +35,9 @@ public final class AdkDevUiApplication {
         LlmAgent stockMarketResearchAgent = MarketResearchAgentFactory.createMarketResearchAgent();
         LlmAgent financeAdvisorAgentV4 = FinanceAdvisorAgentV4Factory.createFinanceAdvisorAgentV4();
 
-        // Initialize Yahoo Finance MCP client for V5
+        // Initialize Yahoo Finance MCP client for V5 & V6
         LlmAgent financeAdvisorAgentV5;
+        LlmAgent financeAdvisorAgentV6;
         try {
             YahooFinanceMcpClientManager mcpManager = new YahooFinanceMcpClientManager();
             mcpManager.start();
@@ -46,13 +47,26 @@ public final class AdkDevUiApplication {
                 } catch (Exception ignored) {}
             }));
             financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(mcpManager.getMcpToolset());
+            financeAdvisorAgentV6 = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(mcpManager.getMcpToolset());
         } catch (Exception e) {
-            System.err.println("Warning: Could not start Yahoo Finance MCP client for V5: " + e.getMessage());
+            System.err.println("Warning: Could not start Yahoo Finance MCP client: " + e.getMessage());
             financeAdvisorAgentV5 = FinanceAdvisorAgentV5Factory.createFinanceAdvisorAgentV5(null);
+            financeAdvisorAgentV6 = com.google.adk.finance.v6.FinanceAdvisorAgentV6.createFinanceAdvisorAgentV6(null);
         }
 
         // Boot Spring Boot ADK Web Server with static agent registration
-        AdkWebServer.start(rootAgent, draftAgent, researchAgent, financeAgentV1, financeAgentV2, financeAgentV3, stockMarketResearchAgent, financeAdvisorAgentV4, financeAdvisorAgentV5);
+        AdkWebServer.start(
+                rootAgent,
+                draftAgent,
+                researchAgent,
+                financeAgentV1,
+                financeAgentV2,
+                financeAgentV3,
+                stockMarketResearchAgent,
+                financeAdvisorAgentV4,
+                financeAdvisorAgentV5,
+                financeAdvisorAgentV6
+        );
     }
 
     private AdkDevUiApplication() {}
