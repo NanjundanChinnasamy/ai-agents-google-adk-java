@@ -4,7 +4,7 @@ A production-grade, multi-domain AI backend built in **Java 21** using the offic
 
 The application accommodates two complementary autonomous multi-agent systems sharing a common core foundation of hybrid model execution, dynamic skills, Model Context Protocol (MCP) toolsets, embedded SQLite persistence, and reactive Server-Sent Events (SSE) streaming via the **AG-UI Protocol**:
 1. **Domain 1: Social Spark**: Social media post generator, real-time web researcher, multimodal image creator, human approval gate, and publisher (LinkedIn & Buffer MCPs) integrated with `@ag-ui/client` and CopilotKit Next.js frontend.
-2. **Domain 2: Finance Portfolio Decision-Support Agent**: A progressive 6-week curriculum (`v1` through `v10` and `prod`) answering *"Research my portfolio, explain what changed, identify evidence, compare scenarios, and produce a decision-support report."*
+2. **Domain 2: Finance Portfolio Decision-Support Agent**: A progressive curriculum (`v1` through `v11` and `prod`) answering *"Research my portfolio, explain what changed, identify evidence, compare scenarios, and produce a decision-support report."*
 
 > [!IMPORTANT]
 > **Documentation Constraint — Relative Paths Only**:
@@ -38,7 +38,7 @@ The application accommodates two complementary autonomous multi-agent systems sh
 | - Research Specialist (research_agent)   |                   |  evidence, compare scenarios, produce decision report"     |
 | - Drafting Specialist (draft_agent)      |                   |                                                             |
 | - Memory Specialist (Remote A2A)         |                   |  Evolutionary Progression:                                   |
-| - MCP Publishing (LinkedIn & Buffer)     |                   |  v1 -> v2 -> v3 -> v4 -> v5 -> v6 -> v7 -> v8 -> v9 -> v10 -> Prod |
+| - MCP Publishing (LinkedIn & Buffer)     |                   |  v1 -> v2 -> v3 -> v4 -> v5 -> v6 -> v7 -> v8 -> v9 -> v10 -> v11 -> Prod |
 +------------------------------------------+                   +-------------------------------------------------------------+
                      |                                                                               |
                      +---------------------------------------+---------------------------------------+
@@ -156,6 +156,23 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Grounded Latency & Tool Accounting**: Precise millisecond measurements across components without fabricating synthetic metrics.
   - **Interactive Diagnostics Console**: CLI commands for `ask`, `trace`, `history`, `failed`, `guardrails`, `eval-failures`, `eval`, `eval-all`, and `inspect`.
   - **Reference Guide**: See [`v10/README.md`](v10/README.md) and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
+- **Week 5+ — Version 11 (`finance.v11`)**:
+  - **Rules-Driven and Hook-Aware Agent**: Establishes the clear architectural distinction between declarative behavioural guidance (**RULES**) and programmatic interception points (**HOOKS**).
+  - **Modular Rules Catalog (`v11/rules/`)**: 5 persistent Markdown rules files loaded dynamically via `RuleLoader`:
+    1. `finance-rules.md`: Truthfulness, zero financial hallucination, fact vs. analysis distinction, explicit data gaps.
+    2. `research-rules.md`: Recency, temporal delineation, 90-day data freshness, and mandatory grounding in `market_researcher_v11`.
+    3. `source-rules.md`: Strict tool-to-domain mapping (Quotes/Financials -> Yahoo Finance MCP; News/Web -> Google Search; Holdings -> SQLite DB; Calculations -> `portfolio_math`). Cross-source substitution prohibited.
+    4. `risk-rules.md`: Concentration risk alerts (>25%), probabilistic framing, and beta vs. forward risk separation.
+    5. `response-rules.md`: Provenance transparency, structural formatting, and mandatory regulatory disclaimers.
+  - **Scoped Rules Application**: Targeted rule injection per specialist agent (`market_researcher_v11`, `fundamental_analyst_v11`, `portfolio_risk_agent_v11`, `response_synthesis_agent_v11`).
+  - **Deterministic Lifecycle Hooks (`v11/hooks/`) with Blocking vs Non-Blocking Policies**:
+    1. `PreToolSourceValidationHook` (`BeforeToolCallbackSync`, **BLOCKING**): Strictly blocks unauthorized tools (`execute_trade`), enforces source-rules ticker constraints, and validates arguments before external tool execution.
+    2. `PostToolObservationHook` (`AfterToolCallbackSync`, **NON-BLOCKING**): Telemetry and audit observer logging tool latency, payload size, and capability category without intercepting or failing the flow.
+    3. `ResponseValidationHook` (`AfterModelCallbackSync`, **BLOCKING/REMEDIATING**): Validates non-empty output, checks source context, and deterministically injects missing regulatory disclaimers.
+    4. `PreAgentRuleEnforcementHook` (`BeforeAgentCallbackSync`, **NON-BLOCKING**): Verifies active rules presence in session state and initializes rule tracking metadata.
+  - **Sequential Research Workflow with Stage Hooks**: `SequentialResearchWorkflowV11` with `WorkflowStageHook` capturing start, completion, and error states across pipeline stages.
+  - **Interactive Terminal Console**: Dedicated CLI runner supporting `/rules`, `/rule <name>`, `/scoped`, `/hooks`, `/test-blocking`, `/test-nonblocking`, `/workflow <ticker>`, and `/scenario <ticker>`.
+  - **Reference Guide**: See [`v11/README.md`](v11/README.md).
 
 ---
 
@@ -180,6 +197,7 @@ ai-agents-google-adk-java/
 ├── test-finance-v8.bat / .sh  # Dedicated CLI runner for Finance Advisor v8 (Guardrails & Callbacks)
 ├── test-finance-v9.bat / .sh  # Dedicated CLI runner for Finance Advisor v9 (Evaluation & Failure Testing)
 ├── test-finance-v10.bat / .sh # Dedicated CLI runner for Finance Advisor v10 (Observability & Persistence)
+├── test-finance-v11.bat / .sh # Dedicated CLI runner for Finance Advisor v11 (Rules Files & Lifecycle Hooks)
 ├── .env.example               # Environment variables template
 ├── docs/                      # Technical documentation and milestone references
 │   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
@@ -222,6 +240,13 @@ ai-agents-google-adk-java/
 │   ├── metrics/               # Grounded latency, tool accounting, and token metrics
 │   ├── tests/                 # JUnit 5 & AssertJ observability and persistence test suite
 │   └── data/executions/       # Persisted execution traces (.json)
+├── v11/                       # Milestone V11 documentation, rules, hooks & workflows
+│   ├── README.md              # V11 overview, rules vs hooks architecture & execution guide
+│   ├── rules/                 # 5 Modular Markdown rule files (finance, research, source, risk, response)
+│   ├── ruleloader/            # Dynamic Markdown rule loader & agent scoping
+│   ├── hooks/                 # Lifecycle interception hooks (blocking vs non-blocking)
+│   ├── sub-agents/            # Scoped specialist sub-agents
+│   └── workflows/             # Sequential workflow with stage lifecycle hooks
 ├── knowledge/                 # Curated finance domain grounding knowledge (glossary, valuation, risk, etc.)
 ├── skills/                    # Agent Skills (Social Spark & Finance Domain Skills)
 │   ├── brand-voice/           # Social Spark: Brand tone & British English rules
@@ -367,7 +392,32 @@ ai-agents-google-adk-java/
     │   │               ├── GuardedMarketResearchAgentV8.java  # Isolated search sub-agent with V8 callbacks
     │   │               └── MockTradingAgentV8.java            # Prohibited trading harness for tool-block testing
     │   │
-    │   └── resources/logback.xml                      # Logging configuration
+    │   │       └── v11/                                   # Week 5+: Rules-Driven & Hook-Aware Agent
+    │   │           ├── FinanceAdvisorAgentV11.java        # Root advisor orchestrating rules & hooks
+    │   │           ├── FinanceConsoleV11.java             # Interactive CLI runner for rules and hooks
+    │   │           ├── ruleloader/
+    │   │           │   ├── RuleLoader.java                # Dynamic rule loader from classpath / v11/rules/
+    │   │           │   └── ScopedRules.java               # Agent-specific rule scoping helper
+    │   │           ├── hooks/
+    │   │           │   ├── HookPolicy.java                # BLOCKING vs NON_BLOCKING policy enum
+    │   │           │   ├── HookResult.java                # Standardized hook execution record
+    │   │           │   ├── HookRegistry.java              # Registry managing lifecycle hooks
+    │   │           │   ├── PreToolSourceValidationHook.java # BLOCKING BeforeTool hook
+    │   │           │   ├── PostToolObservationHook.java   # NON_BLOCKING AfterTool observation hook
+    │   │           │   ├── ResponseValidationHook.java    # BLOCKING/REMEDIATING AfterModel hook
+    │   │           │   └── PreAgentRuleEnforcementHook.java # NON_BLOCKING BeforeAgent rule verification
+    │   │           ├── agents/                            # Scoped Specialist Sub-Agents
+    │   │           │   ├── MarketResearchAgentV11.java     # Google Search agent scoped with research/source rules
+    │   │           │   ├── FundamentalAnalysisAgentV11.java # Yahoo Finance MCP agent scoped with source rules
+    │   │           │   ├── PortfolioRiskAgentV11.java     # Portfolio math agent scoped with risk rules
+    │   │           │   └── ResponseSynthesisAgentV11.java # Synthesis agent scoped with response rules
+    │   │           └── workflows/
+    │   │               ├── WorkflowStageHook.java         # Lifecycle hook interface for pipeline stages
+    │   │               └── SequentialResearchWorkflowV11.java # Sequential research pipeline with stage hooks
+    │   │
+    │   └── resources/
+    │       ├── logback.xml                                # Logging configuration
+    │       └── v11/rules/                                 # Packaged rules markdown files
     │
     └── test/
         └── java/com/google/adk/
@@ -399,15 +449,21 @@ ai-agents-google-adk-java/
                 │   └── FinanceV6IntegrationTest.java
                 ├── v7/
                 │   └── FinanceV7IntegrationTest.java
-                └── v8/
-                    ├── GuardrailResultTest.java
-                    ├── PiiGuardrailTest.java
-                    ├── PromptInjectionGuardrailTest.java
-                    ├── ToolGuardrailsTest.java
-                    ├── OutputGuardrailsTest.java
-                    ├── EvidenceStoreTest.java
-                    ├── LifecycleCallbacksTest.java
-                    └── FinanceAdvisorAgentV8Test.java
+                ├── v8/
+                │   ├── GuardrailResultTest.java
+                │   ├── PiiGuardrailTest.java
+                │   ├── PromptInjectionGuardrailTest.java
+                │   ├── ToolGuardrailsTest.java
+                │   ├── OutputGuardrailsTest.java
+                │   ├── EvidenceStoreTest.java
+                │   ├── LifecycleCallbacksTest.java
+                │   └── FinanceAdvisorAgentV8Test.java
+                └── v11/
+                    ├── RulesLoadingAndScopingTest.java
+                    ├── PreToolValidationHookTest.java
+                    ├── PostToolObservationHookTest.java
+                    ├── ResponseValidationHookTest.java
+                    └── FinanceAdvisorV11IntegrationTest.java
 ```
 
 ---
@@ -954,6 +1010,54 @@ Run the Finance Advisor V10 interactive observability, trace diagnostics, and pe
 - **Failure Isolation**: Separates business/agent execution failures from telemetry/storage failures.
 - **Documentation**: See [`v10/README.md`](v10/README.md) and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
 
+#### Week 5+ — Version 11: Rules Files & Lifecycle Hooks (`finance.v11`)
+Run the Finance Advisor V11 interactive console featuring modular rules and lifecycle interception hooks:
+```bash
+# Windows
+.\test-finance-v11.bat
+
+# macOS / Linux
+./test-finance-v11.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV11 --console=plain -q
+
+# Interactive Terminal Commands:
+#   /rules             - Display all loaded rules files and their contents
+#   /rule <name>       - Display a specific rule (e.g., /rule finance-rules.md)
+#   /scoped            - Inspect rule assignments across specialized sub-agents
+#   /hooks             - List all registered lifecycle hooks and their policies
+#   /test-blocking     - Demonstrate BLOCKING hook intercepting unauthorized trading tool
+#   /test-nonblocking  - Demonstrate NON-BLOCKING observation hook recording metrics
+#   /workflow <ticker> - Run sequential research workflow with stage lifecycle hooks
+#   /scenario <ticker> - Run scenario analysis demonstrating rules-driven constraints
+#   /help              - Display command menu
+#   /quit              - Exit console
+
+# One-shot demonstration queries:
+# 1. Inspect loaded rules:
+.\test-finance-v11.bat "/rules"
+
+# 2. Test blocking unauthorized trading tool:
+.\test-finance-v11.bat "/test-blocking"
+
+# 3. Test non-blocking observation hook:
+.\test-finance-v11.bat "/test-nonblocking"
+
+# 4. End-to-end rules-grounded advisory inquiry:
+.\test-finance-v11.bat "Provide a fundamental and risk assessment of INFY.NS using rules and hooks."
+```
+
+**Key Architectural Features in V11:**
+- **Rules vs Hooks Architectural Distinction**: Clarifies that **Rules** (`v11/rules/`) provide declarative, persistent domain guidance instructing *how* the agent thinks and acts, while **Hooks** (`v11/hooks/`) provide deterministic, programmatic interception points executing code *before/after* agent, tool, and model lifecycle events.
+- **5 Modular Rules Files**: Dynamic loading of `finance-rules.md`, `research-rules.md`, `source-rules.md`, `risk-rules.md`, and `response-rules.md` via `RuleLoader`.
+- **Targeted Agent Scoping**: Granular rule distribution to specialists (`market_researcher_v11`, `fundamental_analyst_v11`, `portfolio_risk_agent_v11`, `response_synthesis_agent_v11`).
+- **Blocking vs Non-Blocking Policies**:
+  - `BLOCKING` (`PreToolSourceValidationHook`, `ResponseValidationHook`): Enforces policy invariant checks, halts unauthorized operations (`execute_trade`), and appends missing regulatory disclaimers.
+  - `NON_BLOCKING` (`PostToolObservationHook`, `PreAgentRuleEnforcementHook`): Observes metadata, tool execution latency, and rule state without impeding execution.
+- **Sequential Stage Hooks**: `SequentialResearchWorkflowV11` with `WorkflowStageHook` capturing lifecycle transitions across pipeline stages.
+- **Documentation**: See [`v11/README.md`](v11/README.md).
+
 ---
 
 ### 5. Model Context Protocol (MCP) Server: Yahoo Finance (Java)
@@ -1011,6 +1115,9 @@ See [`mcp/README.md`](mcp/README.md) for full configuration blocks for Claude De
 
 # Run only Finance Advisor V9 evaluation, failure testing, and regression suite:
 ./gradlew test --tests com.google.adk.finance.v9.*
+
+# Run only Finance Advisor V11 rules, hooks, and integration test suite:
+./gradlew test --tests com.google.adk.finance.v11.*
 ```
 
 

@@ -88,6 +88,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 | **4** | **Finance Agent v8** | Callbacks (`BeforeAgent`, `AfterAgent`, `BeforeTool`, `AfterTool`, `AfterModel`), Guardrails | Compliance disclaimer injection, PII scrubbing, hallucination filters | `com.google.adk.finance.v8` |
 | **5** | **Finance Agent v9** | Automated evaluation, LLM-as-a-judge, Groundedness scoring, Red-teaming | Benchmark tests verifying report fidelity, math accuracy & failure recovery | `src/test/java/com/google/adk/finance/eval/` |
 | **5** | **Finance Agent v10** | OpenTelemetry/Micrometer tracing, SQLite post-run persistence, Audit logging | Full run traceability, token accounting & historical report archives | `com.google.adk.finance.v10` |
+| **5+** | **Finance Advisor v11** | Modular Rules (`v11/rules/`), Rule Scoping, Lifecycle Callbacks (`BeforeTool`, `AfterTool`, `AfterModel`, `BeforeAgent`), Blocking vs Non-Blocking Policies | Rules-driven, hook-aware decision-support agent | `com.google.adk.finance.v11` |
 | **6** | **Production Release** | Containerization, Cloud Run / Agent Engine, GCP IAM Workload Identity, CI/CD | Secure, scalable enterprise deployment with automated quality gates | `com.google.adk.finance.prod` |
 
 ---
@@ -740,6 +741,87 @@ User Request: "Create an investment research report on Infosys and ensure import
 
 ---
 
+### Week 5+ — Version 11: Rules-Driven and Hook-Aware Agent (`finance.v11`)
+- **Package**: `com.google.adk.finance.v11` (mirrored in `v11/`)
+- **Core Files**:
+  - [`FinanceAdvisorAgentV11.java`](src/main/java/com/google/adk/finance/v11/FinanceAdvisorAgentV11.java): Root agent orchestrator with lifecycle hooks, scoped sub-agents, rules injection, and testbed trading harness.
+  - [`FinanceConsoleV11.java`](src/main/java/com/google/adk/finance/v11/FinanceConsoleV11.java): Interactive terminal console supporting `/rules`, `/rule`, `/scoped`, `/hooks`, `/test-blocking`, `/test-nonblocking`, `/workflow`, and `/scenario`.
+  - **Rule Loader & Scoping (`com.google.adk.finance.v11.ruleloader`)**:
+    - [`RuleLoader.java`](src/main/java/com/google/adk/finance/v11/ruleloader/RuleLoader.java): Robust loader resolving rules from classpath resources (`src/main/resources/v11/rules/`) or filesystem (`v11/rules/`).
+    - [`ScopedRules.java`](src/main/java/com/google/adk/finance/v11/ruleloader/ScopedRules.java): Maps and formats targeted rule subsets per specialized agent.
+  - **Lifecycle Interception Layer (`com.google.adk.finance.v11.hooks`)**:
+    - [`HookPolicy.java`](src/main/java/com/google/adk/finance/v11/hooks/HookPolicy.java): Enum defining `BLOCKING` vs `NON_BLOCKING` enforcement policies.
+    - [`HookResult.java`](src/main/java/com/google/adk/finance/v11/hooks/HookResult.java): Immutable execution record capturing hook name, phase, policy, status, and message.
+    - [`HookRegistry.java`](src/main/java/com/google/adk/finance/v11/hooks/HookRegistry.java): Thread-safe registry maintaining and querying registered lifecycle hooks.
+    - [`PreToolSourceValidationHook.java`](src/main/java/com/google/adk/finance/v11/hooks/PreToolSourceValidationHook.java): Implements `BeforeToolCallbackSync` (**BLOCKING**). Authorizes analytical tools, enforces source-rules ticker boundaries, and blocks transactional tools (`execute_trade`).
+    - [`PostToolObservationHook.java`](src/main/java/com/google/adk/finance/v11/hooks/PostToolObservationHook.java): Implements `AfterToolCallbackSync` (**NON-BLOCKING**). Records tool execution metadata, capability categorization, and payload size.
+    - [`ResponseValidationHook.java`](src/main/java/com/google/adk/finance/v11/hooks/ResponseValidationHook.java): Implements `AfterModelCallbackSync` (**BLOCKING/REMEDIATING**). Validates non-empty output, audits source context, and appends mandatory regulatory disclaimers.
+    - [`PreAgentRuleEnforcementHook.java`](src/main/java/com/google/adk/finance/v11/hooks/PreAgentRuleEnforcementHook.java): Implements `BeforeAgentCallbackSync` (**NON-BLOCKING**). Verifies active rules presence in session state and initializes rule tracking metadata.
+  - **Specialist Sub-Agents (`com.google.adk.finance.v11.agents`)**:
+    - [`MarketResearchAgentV11.java`](src/main/java/com/google/adk/finance/v11/agents/MarketResearchAgentV11.java): Isolated Google Search sub-agent scoped with `finance-rules.md`, `research-rules.md`, and `source-rules.md`.
+    - [`FundamentalAnalysisAgentV11.java`](src/main/java/com/google/adk/finance/v11/agents/FundamentalAnalysisAgentV11.java): Yahoo Finance MCP sub-agent scoped with `finance-rules.md` and `source-rules.md`.
+    - [`PortfolioRiskAgentV11.java`](src/main/java/com/google/adk/finance/v11/agents/PortfolioRiskAgentV11.java): Quantitative risk sub-agent scoped with `finance-rules.md` and `risk-rules.md`.
+    - [`ResponseSynthesisAgentV11.java`](src/main/java/com/google/adk/finance/v11/agents/ResponseSynthesisAgentV11.java): Synthesis sub-agent scoped with `finance-rules.md` and `response-rules.md`.
+  - **Sequential Stage Hooks & Workflows (`com.google.adk.finance.v11.workflows`)**:
+    - [`WorkflowStageHook.java`](src/main/java/com/google/adk/finance/v11/workflows/WorkflowStageHook.java): Lifecycle hook interface intercepting stage start, completion, and error states.
+    - [`SequentialResearchWorkflowV11.java`](src/main/java/com/google/adk/finance/v11/workflows/SequentialResearchWorkflowV11.java): 4-stage sequential pipeline executing Market Research -> Fundamentals -> Risk -> Synthesis with stage hook notifications.
+- **The Core Distinction: Rules vs. Hooks**:
+
+| Dimension | RULES (`v11/rules/`) | HOOKS (`v11/hooks/`) |
+|---|---|---|
+| **Definition** | Declarative, persistent, human-readable markdown instructions defining *how* the agent and sub-agents should reason and act. | Programmatic, deterministic Java callbacks intercepting lifecycle events *before/after* agent, tool, or model execution. |
+| **Execution Medium** | Prompt templating & context injection (`RuleLoader` into system prompt). | Compiled Java code implementing ADK callback interfaces (`BeforeToolCallbackSync`, etc.). |
+| **Enforcement Nature** | Cognitive / Behavioral: Influences LLM planning, decision criteria, and formatting. | Deterministic / Structural: Enforces hard boundaries, validates schemas, intercepts prohibited actions, and captures telemetry. |
+| **Modification** | Domain experts / policy authors can update Markdown files without recompiling code. | Software engineers update hook classes and policies in Java code. |
+| **Failure Mode** | LLM could potentially forget or hallucinate if context is overwhelmed (addressed by scoping). | Deterministic code execution; guarantees blocking or observation regardless of model behavior. |
+
+- **ADK Classes & Concepts Learned**:
+  - `com.google.adk.agents.callbacks.BeforeToolCallbackSync`: Intercepting tool invocation, returning `Optional<Map<String, Object>>` to block or override execution.
+  - `com.google.adk.agents.callbacks.AfterToolCallbackSync`: Intercepting tool output to observe latency, schema, and metadata without modifying return payload.
+  - `com.google.adk.agents.callbacks.AfterModelCallbackSync`: Intercepting `LlmResponse` to inspect response text, verify evidence grounding, and append missing disclaimers.
+  - `com.google.adk.agents.callbacks.BeforeAgentCallbackSync`: Intercepting initial user turn, populating session state with active rule metadata.
+  - Scoped prompt modularity: Loading rules into dedicated agent personas instead of monolithic system prompts.
+- **Lifecycle Interception Topology**:
+  ```
+                        USER INQUIRY
+                             │
+                             ▼
+             [PreAgentRuleEnforcementHook]
+             (NON-BLOCKING: Verifies rules in state)
+                             │
+                             ▼
+                  FinanceAdvisorAgentV11
+                  (Model: gemma4:31b)
+                             │
+                  ┌──────────┴──────────┐
+                  ▼                     ▼
+        [PreToolSourceValidation]    [Direct Answer]
+        (BLOCKING: Blocks trades,          │
+         validates ticker syntax)          │
+                  │                        │
+                  ▼                        │
+          TOOL EXECUTION                   │
+        (MCP / Search / Math)              │
+                  │                        │
+                  ▼                        │
+        [PostToolObservationHook]          │
+        (NON-BLOCKING: Latency,            │
+         payload size, capability)         │
+                  │                        │
+                  └──────────┬─────────────┘
+                             ▼
+                 [ResponseValidationHook]
+                 (BLOCKING/REMEDIATING:
+                  Enforces non-empty output,
+                  appends disclaimer if missing)
+                             │
+                             ▼
+                       FINAL RESPONSE
+  ```
+- **Documentation**: See [`v11/README.md`](v11/README.md).
+
+---
+
 ### Week 6 — Production Release: Cloud Native Architecture (`finance.prod`)
 - **Package**: `com.google.adk.finance.prod`
 - **Deployment Artifacts**:
@@ -1105,15 +1187,21 @@ ai-agents-google-adk-java/
                 │   ├── LlmJudgeEvaluatorTest.java
                 │   ├── FailureScenarioRunnerTest.java
                 │   └── GuardrailRegressionTest.java
-                └── v10/
-                    ├── ObservabilityTest.java
-                    ├── TraceCompletenessTest.java
-                    ├── PersistenceTest.java
-                    ├── PiiSafetyTest.java
-                    ├── FailurePersistenceTest.java
-                    ├── MetricsTest.java
-                    ├── GoldenTraceTest.java
-                    └── ObservabilityFailureTest.java
+                ├── v10/
+                │   ├── ObservabilityTest.java
+                │   ├── TraceCompletenessTest.java
+                │   ├── PersistenceTest.java
+                │   ├── PiiSafetyTest.java
+                │   ├── FailurePersistenceTest.java
+                │   ├── MetricsTest.java
+                │   ├── GoldenTraceTest.java
+                │   └── ObservabilityFailureTest.java
+                └── v11/
+                    ├── RulesLoadingAndScopingTest.java
+                    ├── PreToolValidationHookTest.java
+                    ├── PostToolObservationHookTest.java
+                    ├── ResponseValidationHookTest.java
+                    └── FinanceAdvisorV11IntegrationTest.java
 ```
 
 ---
@@ -1203,6 +1291,10 @@ The application provides three complementary ways to run and test both Social Sp
   - Class: [`FinanceConsoleV10.java`](src/main/java/com/google/adk/finance/v10/FinanceConsoleV10.java)
   - Launcher: `.\test-finance-v10.bat` (or Gradle: `.\gradlew.bat runFinanceV10 --console=plain -q`)
   - Features: Correlation spine (`exec-YYYYMMDD-<uuid8>`), structured event streams (`AGENT_STARTED`, `MODEL_CALL_STARTED`, `TOOL_CALL_STARTED`, `DISCLAIMER_ENFORCED`, `AGENT_COMPLETED`), PII-safe telemetry redaction, human-readable ASCII timeline traces (`trace`), persisted execution archives in JSON and SQLite (`history`, `inspect <id>`), diagnostic queries (`failed`, `guardrails`, `eval-failures`), and golden case evaluation persistence (`eval <caseId>`, `eval-all`).
+- **Finance Advisor v11 Console (Rules Files & Lifecycle Hooks)**:
+  - Class: [`FinanceConsoleV11.java`](src/main/java/com/google/adk/finance/v11/FinanceConsoleV11.java)
+  - Launcher: `.\test-finance-v11.bat` (or Gradle: `.\gradlew.bat runFinanceV11 --console=plain -q`)
+  - Features: Modular rules inspection (`/rules`, `/rule <name>`), sub-agent scoped rule distribution inspection (`/scoped`), lifecycle hooks registry (`/hooks`), blocking hook testing on unauthorized trading tools (`/test-blocking`), non-blocking hook observation testing (`/test-nonblocking`), sequential research workflow execution with stage lifecycle hooks (`/workflow <ticker>`), and rules-grounded scenario analysis (`/scenario <ticker>`).
 
 ---
 
