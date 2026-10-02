@@ -1,0 +1,188 @@
+{
+  "executionId": "exec-20261001-cea2727e",
+  "userId": "finance-learner-10",
+  "sessionId": "session-aac3f24c",
+  "startedAt": "2026-10-01T20:17:59.409032400Z",
+  "completedAt": "2026-10-01T20:18:24.895710900Z",
+  "status": "SUCCESS",
+  "agentName": "finance_advisor_v10",
+  "sanitizedPrompt": "Agent execution started: \"Analyze Infosys using current financial information.\"",
+  "sanitizedResponse": "\n\n[REGULATORY DISCLAIMER] For informational and educational purposes only. Not investment advice.",
+  "events": [
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-eab1ad39",
+      "timestamp": "2026-10-01T20:17:59.409032400Z",
+      "eventType": "AGENT_STARTED",
+      "component": "AGENT",
+      "agentName": "finance_advisor_v10",
+      "status": "STARTED",
+      "safeSummary": "Agent execution started: \"Analyze Infosys using current financial information.\"",
+      "metadata": {
+        "sessionId": "session-aac3f24c",
+        "userId": "finance-learner-10",
+        "promptPreview": "Analyze Infosys using current financial information."
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-bebdd76e",
+      "timestamp": "2026-10-01T20:17:59.409032400Z",
+      "eventType": "MODEL_CALL_STARTED",
+      "component": "MODEL",
+      "agentName": "finance_advisor_v10",
+      "status": "STARTED",
+      "safeSummary": "Invoking LLM model: gemini-2.5-flash",
+      "metadata": {
+        "modelName": "gemini-2.5-flash"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-e69aee8e",
+      "timestamp": "2026-10-01T20:18:01.201938Z",
+      "eventType": "TOOL_CALL_STARTED",
+      "component": "TOOL",
+      "agentName": "finance_advisor_v10",
+      "status": "STARTED",
+      "safeSummary": "Invoking tool 'stockmarket_researcher' [GOOGLE_SEARCH]",
+      "metadata": {
+        "toolName": "stockmarket_researcher",
+        "toolSource": "GOOGLE_SEARCH",
+        "request": "Infosys current financial performance, recent earnings report, analyst ratings, and key growth catalysts 2024-2025"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-d14265f9",
+      "timestamp": "2026-10-01T20:18:01.201938Z",
+      "eventType": "TOOL_CALL_STARTED",
+      "component": "TOOL",
+      "agentName": "finance_advisor_v10",
+      "status": "STARTED",
+      "safeSummary": "Invoking tool 'get_stock_info' [YAHOO_FINANCE_MCP] on symbol=INFY",
+      "metadata": {
+        "toolName": "get_stock_info",
+        "toolSource": "YAHOO_FINANCE_MCP",
+        "symbol": "INFY"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-f381ff50",
+      "timestamp": "2026-10-01T20:18:21.924127100Z",
+      "eventType": "TOOL_CALL_COMPLETED",
+      "component": "TOOL",
+      "agentName": "finance_advisor_v10",
+      "durationMs": 150,
+      "status": "SUCCESS",
+      "safeSummary": "Tool 'stockmarket_researcher' completed in 150ms (status=SUCCESS): Tool executed",
+      "metadata": {
+        "toolName": "stockmarket_researcher",
+        "toolSource": "GOOGLE_SEARCH",
+        "durationMs": 150,
+        "status": "SUCCESS"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-f370a863",
+      "timestamp": "2026-10-01T20:18:24.347793400Z",
+      "eventType": "TOOL_CALL_STARTED",
+      "component": "TOOL",
+      "agentName": "finance_advisor_v10",
+      "status": "STARTED",
+      "safeSummary": "Invoking tool 'get_stock_info' [YAHOO_FINANCE_MCP] on symbol=INFY",
+      "metadata": {
+        "toolName": "get_stock_info",
+        "toolSource": "YAHOO_FINANCE_MCP",
+        "symbol": "INFY"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-b3af2375",
+      "timestamp": "2026-10-01T20:18:24.885296400Z",
+      "eventType": "MODEL_CALL_COMPLETED",
+      "component": "MODEL",
+      "agentName": "finance_advisor_v10",
+      "durationMs": 25475,
+      "status": "SUCCESS",
+      "safeSummary": "Model 'gemini-2.5-flash' generated response in 25475ms (tokens: UNKNOWN)",
+      "metadata": {
+        "modelName": "gemini-2.5-flash",
+        "durationMs": 25475,
+        "tokenUsage": "UNKNOWN"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-d89be9e9",
+      "timestamp": "2026-10-01T20:18:24.893389600Z",
+      "eventType": "DISCLAIMER_ENFORCED",
+      "component": "GUARDRAIL",
+      "agentName": "finance_advisor_v10",
+      "status": "SUCCESS",
+      "safeSummary": "Mandatory regulatory compliance disclaimer appended",
+      "metadata": {
+        "guardrail": "ComplianceDisclaimerGuard",
+        "alreadyPresent": false,
+        "action": "APPENDED"
+      }
+    },
+    {
+      "executionId": "exec-20261001-cea2727e",
+      "eventId": "evt-428725a6",
+      "timestamp": "2026-10-01T20:18:24.894399300Z",
+      "eventType": "AGENT_COMPLETED",
+      "component": "AGENT",
+      "agentName": "finance_advisor_v10",
+      "durationMs": 25480,
+      "status": "SUCCESS",
+      "safeSummary": "Agent execution completed with status: SUCCESS",
+      "metadata": {
+        "durationMs": 25480,
+        "responsePreview": "\n\n[REGULATORY DISCLAIMER] For informational and educational purposes only. Not investment advice.",
+        "status": "SUCCESS"
+      }
+    }
+  ],
+  "metrics": {
+    "totalExecutionDurationMs": 25486,
+    "overallStatus": "SUCCESS",
+    "modelCallCount": 1,
+    "toolCallCount": 3,
+    "guardrailEventCount": 1,
+    "evaluationFailureCount": 0,
+    "tokenMetrics": {
+      "inputTokens": "UNKNOWN",
+      "outputTokens": "UNKNOWN",
+      "totalTokens": "UNKNOWN",
+      "isAvailable": false
+    },
+    "latencyMetrics": {
+      "totalExecutionMs": 25486,
+      "modelLatencyMs": 25475,
+      "toolLatencyMs": 150,
+      "evaluationLatencyMs": 0,
+      "guardrailLatencyMs": 0
+    },
+    "toolMetricsMap": {
+      "stockmarket_researcher": {
+        "toolName": "stockmarket_researcher",
+        "invocationCount": 1,
+        "successCount": 1,
+        "failureCount": 0,
+        "totalDurationMs": 150
+      }
+    },
+    "evaluationMetrics": {
+      "totalEvaluations": 0,
+      "passedEvaluations": 0,
+      "failedEvaluations": 0,
+      "warningEvaluations": 0,
+      "scores": {}
+    }
+  },
+  "evaluations": []
+}

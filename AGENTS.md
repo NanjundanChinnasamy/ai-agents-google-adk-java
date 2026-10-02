@@ -1089,15 +1089,31 @@ ai-agents-google-adk-java/
                 │   └── FinanceV6IntegrationTest.java
                 ├── v7/
                 │   └── FinanceV7IntegrationTest.java
-                └── v8/
-                    ├── GuardrailResultTest.java
-                    ├── PiiGuardrailTest.java
-                    ├── PromptInjectionGuardrailTest.java
-                    ├── ToolGuardrailsTest.java
-                    ├── OutputGuardrailsTest.java
-                    ├── EvidenceStoreTest.java
-                    ├── LifecycleCallbacksTest.java
-                    └── FinanceAdvisorAgentV8Test.java
+                ├── v8/
+                │   ├── GuardrailResultTest.java
+                │   ├── PiiGuardrailTest.java
+                │   ├── PromptInjectionGuardrailTest.java
+                │   ├── ToolGuardrailsTest.java
+                │   ├── OutputGuardrailsTest.java
+                │   ├── EvidenceStoreTest.java
+                │   ├── LifecycleCallbacksTest.java
+                │   └── FinanceAdvisorAgentV8Test.java
+                ├── v9/
+                │   ├── FaithfulnessEvaluatorTest.java
+                │   ├── CalculationFidelityEvaluatorTest.java
+                │   ├── ScenarioCompletenessEvaluatorTest.java
+                │   ├── LlmJudgeEvaluatorTest.java
+                │   ├── FailureScenarioRunnerTest.java
+                │   └── GuardrailRegressionTest.java
+                └── v10/
+                    ├── ObservabilityTest.java
+                    ├── TraceCompletenessTest.java
+                    ├── PersistenceTest.java
+                    ├── PiiSafetyTest.java
+                    ├── FailurePersistenceTest.java
+                    ├── MetricsTest.java
+                    ├── GoldenTraceTest.java
+                    └── ObservabilityFailureTest.java
 ```
 
 ---
@@ -1179,7 +1195,14 @@ The application provides three complementary ways to run and test both Social Sp
   - Class: [`FinanceConsoleV8.java`](src/main/java/com/google/adk/finance/v8/FinanceConsoleV8.java)
   - Launcher: `.\test-finance-v8.bat` (or Gradle: `.\gradlew.bat runFinanceV8 --console=plain -q`)
   - Features: 5-stage lifecycle interception (`BeforeAgent`, `BeforeModel`, `BeforeTool`, `AfterTool`, `AfterModel`), PII detection & masking (`test-pii`), prompt injection halting (`test-injection`), unauthorized trade execution blocking (`test-trade`), empirical fact tracking in `EvidenceStore` (`facts`), numerical hallucination detection (`test-hallucination`), and regulatory disclaimer enforcement.
-
+- **Finance Advisor v9 Console (Evaluation & Failure Testing)**:
+  - Class: [`FinanceConsoleV9.java`](src/main/java/com/google/adk/finance/v9/FinanceConsoleV9.java)
+  - Launcher: `.\test-finance-v9.bat` (or Gradle: `.\gradlew.bat runFinanceV9 --console=plain -q`)
+  - Features: Golden benchmark evaluation (`/cases`, `/eval <caseId>`), live failure simulations (`/fail <category>`), empirical fact tracking in `EvidenceStoreV9` (`/evidence`), deterministic evaluators (Faithfulness, Calculation Fidelity, Scenario Completeness), and qualitative LLM judge.
+- **Finance Advisor v10 Console (Observability & Persistence)**:
+  - Class: [`FinanceConsoleV10.java`](src/main/java/com/google/adk/finance/v10/FinanceConsoleV10.java)
+  - Launcher: `.\test-finance-v10.bat` (or Gradle: `.\gradlew.bat runFinanceV10 --console=plain -q`)
+  - Features: Correlation spine (`exec-YYYYMMDD-<uuid8>`), structured event streams (`AGENT_STARTED`, `MODEL_CALL_STARTED`, `TOOL_CALL_STARTED`, `DISCLAIMER_ENFORCED`, `AGENT_COMPLETED`), PII-safe telemetry redaction, human-readable ASCII timeline traces (`trace`), persisted execution archives in JSON and SQLite (`history`, `inspect <id>`), diagnostic queries (`failed`, `guardrails`, `eval-failures`), and golden case evaluation persistence (`eval <caseId>`, `eval-all`).
 
 ---
 

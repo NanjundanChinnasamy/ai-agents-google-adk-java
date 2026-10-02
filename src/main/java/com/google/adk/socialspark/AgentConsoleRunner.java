@@ -59,6 +59,8 @@ public final class AgentConsoleRunner {
         System.out.println("  'finance_v4 <p>'   : Test finance_advisor_v4 directly");
         System.out.println("  'finance_v5 <p>'   : Test finance_advisor_v5 directly");
         System.out.println("  'finance_v6 <p>'   : Test finance_advisor_v6 directly");
+        System.out.println("  'finance_v7 <p>'   : Test finance_advisor_v7 directly");
+        System.out.println("  'finance_v10 <p>'  : Test finance_advisor_v10 directly");
         System.out.println("--------------------------------------------------\n");
 
         try (Scanner scanner = new Scanner(System.in)) {
@@ -141,6 +143,14 @@ public final class AgentConsoleRunner {
                 String financePrompt = input.substring(prefixLen).trim();
                 System.out.println("\n[Testing finance_advisor_v7 directly...]");
                 testFinanceV7Directly(financePrompt);
+                continue;
+            }
+
+            if (input.toLowerCase().startsWith("finance_v10 ") || input.toLowerCase().startsWith("finance_advisor_v10 ")) {
+                int prefixLen = input.toLowerCase().startsWith("finance_v10 ") ? "finance_v10 ".length() : "finance_advisor_v10 ".length();
+                String financePrompt = input.substring(prefixLen).trim();
+                System.out.println("\n[Testing finance_advisor_v10 directly...]");
+                testFinanceV10Directly(financePrompt);
                 continue;
             }
 
@@ -570,8 +580,27 @@ public final class AgentConsoleRunner {
             testFinanceV7Directly(prompt.substring(len).trim());
             return;
         }
+        if (prompt.toLowerCase().startsWith("finance_v10 ") || prompt.toLowerCase().startsWith("finance_advisor_v10 ")) {
+            int len = prompt.toLowerCase().startsWith("finance_v10 ") ? "finance_v10 ".length() : "finance_advisor_v10 ".length();
+            testFinanceV10Directly(prompt.substring(len).trim());
+            return;
+        }
         Runner runner = new InMemoryRunner(SocialPosterAgentFactory.createRootAgent(), "social_poster");
         executeAgentTurn(runner, "one-shot-" + UUID.randomUUID(), prompt, state);
+    }
+
+    private static void testFinanceV10Directly(String prompt) {
+        try {
+            com.google.adk.finance.v10.FinanceAdvisorAgentV10 agentV10 =
+                    com.google.adk.finance.v10.FinanceAdvisorAgentV10.createOffline();
+            com.google.adk.finance.v10.observability.AgentExecution execution =
+                    agentV10.execute("cli-tester", prompt);
+            System.out.println("\nFinance Advisor v10 > " + execution.response());
+            System.out.println("\n[Execution ID: " + execution.executionId() + " | Status: " + execution.status() + "]");
+        } catch (Exception e) {
+            System.err.println("\n[Error running finance_advisor_v10]: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private AgentConsoleRunner() {}

@@ -159,6 +159,14 @@ tasks.register<JavaExec>("runFinanceV9") {
     standardInput = System.`in`
 }
 
+tasks.register<JavaExec>("runFinanceV10") {
+    group = "application"
+    description = "Run Finance Advisor V10 Console with Observability, Trace Diagnostics, and Persistence"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.google.adk.finance.v10.FinanceConsoleV10")
+    standardInput = System.`in`
+}
+
 
 tasks.register<JavaExec>("runYahooFinanceMcp") {
     group = "application"

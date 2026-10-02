@@ -147,6 +147,15 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Golden Benchmark Dataset**: Versioned golden test cases (`finance-evaluation-cases.json`, `failure-test-cases.json`) with intentional failure detection.
   - **V8 Guardrail Regression**: Automated test suite proving perimeter safety defenses remain intact.
   - **Reference Guide**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
+- **Week 5 — Version 10 (`finance.v10`)**:
+  - **Observability, Tracing, and Persistence**: Answers *"Can I see what my agent did, understand why it did it, measure its execution, and retrieve the execution later?"*
+  - **Structured Telemetry Events**: Strongly-typed Java records (`ExecutionEvent`, `EventType`) tracking full cognitive lifecycle: agent started/completed, model calls (with `UNKNOWN` token safety), tool calls (Yahoo Finance MCP, Google Search, deterministic math, SQLite DB), guardrail interventions, evaluation results, and error isolation.
+  - **Correlation Spine**: Collision-safe execution IDs (`exec-YYYYMMDD-<uuid8>`) correlating all events, metrics, traces, and evaluation reports.
+  - **PII-Safe Observability**: Strict privacy-first telemetry architecture automatically redacting bank accounts, cards, Aadhaar, PAN, emails, and phone numbers before trace generation; suppresses raw prompt injection payloads.
+  - **Dual Persistence Abstraction**: `ExecutionRepository` supporting isolated JSON file persistence (`v10/data/executions/{executionId}.json`) and embedded SQLite WAL persistence (`agent_execution_v10` in `finance_portfolio.db`).
+  - **Grounded Latency & Tool Accounting**: Precise millisecond measurements across components without fabricating synthetic metrics.
+  - **Interactive Diagnostics Console**: CLI commands for `ask`, `trace`, `history`, `failed`, `guardrails`, `eval-failures`, `eval`, `eval-all`, and `inspect`.
+  - **Reference Guide**: See [`v10/README.md`](v10/README.md) and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
 
 ---
 
@@ -170,6 +179,7 @@ ai-agents-google-adk-java/
 ├── test-finance-v7.bat / .sh  # Dedicated CLI runner for Finance Advisor v7 (Workflow Orchestration)
 ├── test-finance-v8.bat / .sh  # Dedicated CLI runner for Finance Advisor v8 (Guardrails & Callbacks)
 ├── test-finance-v9.bat / .sh  # Dedicated CLI runner for Finance Advisor v9 (Evaluation & Failure Testing)
+├── test-finance-v10.bat / .sh # Dedicated CLI runner for Finance Advisor v10 (Observability & Persistence)
 ├── .env.example               # Environment variables template
 ├── docs/                      # Technical documentation and milestone references
 │   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
@@ -203,11 +213,15 @@ ai-agents-google-adk-java/
 │   ├── evaluation/            # Deterministic evaluators, evidence store, and LLM judge
 │   │   └── datasets/          # Golden evaluation cases and adversarial failure fixtures
 │   ├── testing/               # Failure scenario runner and test result models
-│   └── tests/                 # JUnit 5 & AssertJ evaluation benchmark test suitelbacks/             # ADK lifecycle callback architecture & mapping
-│   │   └── README.md
-│   ├── agents/README.md       # Root orchestrator specification
-│   ├── sub-agents/README.md   # Guarded sub-agents specification
-│   └── workflows/README.md    # Guardrail workflow integration notes
+│   └── tests/                 # JUnit 5 & AssertJ evaluation benchmark test suite
+├── v10/                       # Milestone V10 documentation and observability reference
+│   ├── README.md              # V10 overview, structured telemetry & persistence guide
+│   ├── docs/                  # Detailed architectural reference for V10 observability
+│   ├── observability/         # Structured events, context, and execution trace engine
+│   ├── persistence/           # JSON file and SQLite execution repositories
+│   ├── metrics/               # Grounded latency, tool accounting, and token metrics
+│   ├── tests/                 # JUnit 5 & AssertJ observability and persistence test suite
+│   └── data/executions/       # Persisted execution traces (.json)
 ├── knowledge/                 # Curated finance domain grounding knowledge (glossary, valuation, risk, etc.)
 ├── skills/                    # Agent Skills (Social Spark & Finance Domain Skills)
 │   ├── brand-voice/           # Social Spark: Brand tone & British English rules
@@ -904,6 +918,41 @@ Run the Finance Advisor V9 interactive evaluation and failure testing console:
 - **Qualitative LLM-as-a-Judge**: Evaluates evidence usage, uncertainty communication, and explanation clarity without overriding deterministic checks.
 - **Adversarial Failure Testing**: Validates system resilience against PII leakage, prompt injection, unauthorized actions, and tool timeouts.
 - **Documentation**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
+
+#### Week 5 — Version 10: Observability + Persistence (`finance.v10`)
+Run the Finance Advisor V10 interactive observability, trace diagnostics, and persistence console:
+```bash
+# Windows
+.\test-finance-v10.bat
+
+# macOS / Linux
+./test-finance-v10.sh
+
+# Or directly with Gradle:
+.\gradlew.bat runFinanceV10 --console=plain -q
+
+# Interactive Terminal Commands:
+#   ask <query>        - Run advisory request and print response with execution ID
+#   trace              - Display ASCII timeline and metrics for the most recent run
+#   history            - List the 10 most recent persisted executions
+#   failed             - List all executions that failed
+#   guardrails         - List executions that triggered guardrail interventions
+#   eval-failures      - List executions that failed V9 evaluation criteria
+#   eval <caseId>      - Run a specific golden evaluation case and persist trace
+#   eval-all           - Run all golden evaluation cases with full observability
+#   inspect <id>       - Display the full stored trace for any execution ID
+#   help               - Display command menu
+#   exit / quit        - Exit console
+```
+
+**Key Architectural Features in V10:**
+- **Correlation Spine**: Collision-safe execution IDs (`exec-YYYYMMDD-<uuid8>`) linking requests, events, tools, models, guardrails, evaluations, and metrics.
+- **Structured Event Streams**: Strongly-typed Java records (`ExecutionEvent`, `EventType`) capturing lifecycle telemetry instead of unstructured stdout logs.
+- **Privacy-First Telemetry**: Strict PII detection & masking before trace construction; suppresses raw prompt injection payloads.
+- **Dual Persistence Abstraction**: `ExecutionRepository` supporting human-readable JSON files (`v10/data/executions/`) and embedded SQLite WAL persistence (`agent_execution_v10` in `finance_portfolio.db`).
+- **Grounded Latency & Tool Accounting**: Precise millisecond measurements across model, tools, guardrails, and evaluations without fabricating synthetic token metrics.
+- **Failure Isolation**: Separates business/agent execution failures from telemetry/storage failures.
+- **Documentation**: See [`v10/README.md`](v10/README.md) and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
 
 ---
 
