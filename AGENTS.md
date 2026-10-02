@@ -63,7 +63,7 @@ The application accommodates two complementary autonomous multi-agent systems sh
 > **Core Objective:**
 > *"Research my portfolio, explain what changed, identify evidence, compare scenarios, and produce a decision-support report."*
 
-Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a strict **versioned educational progression (v1 through v10 and Production)**. Each version isolates specific Google ADK concepts and domain capabilities, allowing developers and agents to inspect, run, test, and compare the system at each evolutionary milestone.
+Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a strict **versioned educational progression (v1 through v11 and Production)**. For a comprehensive architectural primer, conceptual taxonomy, and master index across all versions, see [`docs/finance-agent-intro.md`](docs/finance-agent-intro.md). Each version isolates specific Google ADK concepts and domain capabilities, allowing developers and agents to inspect, run, test, and compare the system at each evolutionary milestone.
 
 ### The Five Analytical Pillars
 1. **Portfolio Ingestion & State Tracking**: Ingest and structure current asset holdings, asset classes, target weightings, purchase prices, and current valuations.
@@ -97,6 +97,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 ### Week 1 — Version 1: Foundational Agent & Session (`finance.v1`)
 - **Package**: `com.google.adk.finance.v1`
+- **Documentation Guide**: [`docs/finance-agent-v1.md`](docs/finance-agent-v1.md)
 - **Core Files**:
   - `FinanceAgentV1Factory.java`: Factory creating baseline `LlmAgent`.
   - `FinanceConsoleV1.java`: Dedicated CLI runner demonstrating session creation.
@@ -123,6 +124,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 ### Week 1 — Version 2: Context & Holdings State Management (`finance.v2`)
 - **Package**: `com.google.adk.finance.v2`
+- **Documentation Guide**: [`docs/finance-agent-v2.md`](docs/finance-agent-v2.md)
 - **Core Files**:
   - [`PortfolioModels.java`](src/main/java/com/google/adk/finance/v2/PortfolioModels.java): Domain records for `CustomerRecord`, `PortfolioHoldingRecord`, and `CustomerPortfolio`.
   - [`CustomerPortfolioRepository.java`](src/main/java/com/google/adk/finance/v2/CustomerPortfolioRepository.java): SQLite DAO with WAL mode managing `customer` and `portfolio_holding` tables with auto-seeding.
@@ -183,6 +185,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 ### Week 2 — Version 3: Java Tools & Grounded Google Search (`finance.v3`)
 - **Package**: `com.google.adk.finance.v3`
+- **Documentation Guide**: [`docs/finance-agent-v3.md`](docs/finance-agent-v3.md)
 - **Core Files**:
   - [`PortfolioMathTool.java`](src/main/java/com/google/adk/finance/tools/PortfolioMathTool.java) (with alias in `v3`): Custom `BaseTool` for deterministic PnL, allocation weights, concentration risk, and technical indicators.
   - [`FinanceAgentV3Factory.java`](src/main/java/com/google/adk/finance/v3/agents/FinanceAgentV3Factory.java): Root agent factory in `v3.agents` coordinating market research, deterministic math, and portfolio ingestion.
@@ -234,6 +237,7 @@ Rather than introducing ad-hoc features, the Finance Portfolio Agent follows a s
 
 ### Week 2 — Version 4: Skills + Grounding Knowledge (`finance.v4`)
 - **Package**: `com.google.adk.finance.v4`
+- **Documentation Guide**: [`docs/finance-agent-v4.md`](docs/finance-agent-v4.md)
 - **Core Files**:
   - [`FinanceAdvisorAgentV4Factory.java`](src/main/java/com/google/adk/finance/v4/FinanceAdvisorAgentV4Factory.java): Builds `finance_advisor_v4` combining `SkillToolset`, `ProjectKnowledgeTool`, `AgentTool(stockmarket_researcher)`, `PortfolioMathTool`, and `LoadCustomerPortfolioTool`.
   - [`ProjectKnowledgeTool.java`](src/main/java/com/google/adk/finance/tools/ProjectKnowledgeTool.java) (with alias in `v4`): Custom `BaseTool` executing `read_project_knowledge` against curated Markdown documents in `knowledge/`.
@@ -584,6 +588,7 @@ User Request: "Create an investment research report on Infosys and ensure import
 
 ### Week 4 — Version 8: Guardrails, Safety & Lifecycle Callbacks (`finance.v8`)
 - **Package**: `com.google.adk.finance.v8`
+- **Documentation Guide**: [`docs/finance-agent-v8.md`](docs/finance-agent-v8.md) and [`v8/README.md`](v8/README.md)
 - **Core Files**:
   - [`FinanceAdvisorAgentV8.java`](src/main/java/com/google/adk/finance/v8/FinanceAdvisorAgentV8.java): Root orchestrator wiring the 5-stage callback perimeter, research sub-agent, mock trading harness, and CLI runner.
   - [`FinanceConsoleV8.java`](src/main/java/com/google/adk/finance/v8/FinanceConsoleV8.java): Dedicated interactive CLI console supporting real-time guardrail introspection, evidence inspection, and automated test triggers.
@@ -729,15 +734,28 @@ User Request: "Create an investment research report on Infosys and ensure import
              ▼
        EvaluationReport (ASCII & Structured Status)
   ```
-- **Documentation**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
+- **Documentation**: See comprehensive guides in [`docs/finance-agent-v9.md`](docs/finance-agent-v9.md), [`v9/README.md`](v9/README.md), and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
 
 ---
 
-### Week 5 — Version 10: Observability & Enterprise Persistence (`finance.v10`)
+### Week 5 — Version 10: Observability, Tracing & Telemetry Persistence (`finance.v10`)
 - **Package**: `com.google.adk.finance.v10`
-- **Components**:
-  - **Telemetry**: OpenTelemetry / Micrometer metrics tracking tool call counts, latency per sub-agent, and token expenditure.
-  - **Durable Persistence**: SQLite/PostgreSQL tables storing portfolio snapshots (`portfolio_snapshots`), run steps (`agent_execution_logs`), and completed decision reports (`decision_reports`).
+- **Documentation Guide**: See comprehensive guides in [`docs/finance-agent-v10.md`](docs/finance-agent-v10.md), [`v10/README.md`](v10/README.md), and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
+- **Core Files**:
+  - [`FinanceAdvisorAgentV10.java`](src/main/java/com/google/adk/finance/v10/FinanceAdvisorAgentV10.java): Root agent factory integrating structured execution tracing, lifecycle observer, guardrails, and persistent storage.
+  - [`FinanceAgentObserver.java`](src/main/java/com/google/adk/finance/v10/observability/FinanceAgentObserver.java): Event listener translating model, tool, guardrail, and evaluation events into a unified `ExecutionTrace`.
+  - [`ExecutionEvent.java`](src/main/java/com/google/adk/finance/v10/observability/ExecutionEvent.java): Strongly typed immutable Java record representing atomic lifecycle telemetry events.
+  - [`ExecutionTrace.java`](src/main/java/com/google/adk/finance/v10/observability/ExecutionTrace.java): Correlation trace correlating all events, component latencies, and evaluation audits under a unique execution ID.
+  - [`ExecutionMetrics.java`](src/main/java/com/google/adk/finance/v10/observability/ExecutionMetrics.java): Telemetry metrics accounting component durations, tool invocations, and token metrics.
+  - [`ExecutionRepository.java`](src/main/java/com/google/adk/finance/v10/persistence/ExecutionRepository.java): DAO interface decoupling telemetry collection from storage mechanics.
+  - [`JsonExecutionRepository.java`](src/main/java/com/google/adk/finance/v10/persistence/JsonExecutionRepository.java): Isolated JSON trace file repository (`v10/data/executions/{executionId}.json`).
+  - [`SqliteExecutionRepository.java`](src/main/java/com/google/adk/finance/v10/persistence/SqliteExecutionRepository.java): Embedded SQLite DAO persisting traces to table `agent_execution_v10` in `finance_portfolio.db`.
+  - [`FinanceConsoleV10.java`](src/main/java/com/google/adk/finance/v10/FinanceConsoleV10.java): Interactive CLI featuring diagnostic commands (`trace`, `history`, `failed`, `eval-failures`, `inspect`).
+- **Core Invariants & Concepts Learned**:
+  - **Correlation Spine**: Unique `executionId` (`exec-YYYYMMDD-<uuid8>`) tracking every event from prompt ingestion to final report.
+  - **PII-Safe Telemetry**: Deterministic redaction of bank accounts, phones, and cards before event creation; suppression of raw prompt injection payloads.
+  - **Token Metric Safety**: Explicit `"tokenUsage": "UNKNOWN"` invariant when tokens are not returned by endpoints—never hallucinating synthetic metrics.
+  - **Failure Isolation**: Clean separation between business/tool failure (status `FAILED` with diagnostic logs) and persistence failure (user still receives advice, logged as `PERSISTENCE_FAILED`).
 
 ---
 
@@ -818,7 +836,7 @@ User Request: "Create an investment research report on Infosys and ensure import
                              ▼
                        FINAL RESPONSE
   ```
-- **Documentation**: See [`v11/README.md`](v11/README.md).
+- **Documentation**: See [`docs/finance-agent-v11.md`](docs/finance-agent-v11.md) and [`v11/README.md`](v11/README.md).
 
 ---
 

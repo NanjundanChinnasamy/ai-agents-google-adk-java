@@ -154,9 +154,45 @@ Every sub-agent in V6 has a narrow, explicit responsibility and isolated toolset
 
 ---
 
-## 5. Verification & Testing
+## 5. Key Files & Implementation Reference
 
-Run all 9 V6 integration tests:
+| File | Package Path | Role & Purpose |
+|---|---|---|
+| `FinanceAdvisorAgentV6.java` | `src/main/java/com/google/adk/finance/v6/` | Root orchestrator factory (`portfolio_director`) coordinating the 5 sub-agents via `AgentTool`. |
+| `MarketResearchAgentV6.java` | `src/main/java/com/google/adk/finance/v6/subagents/` | Search specialist (`stockmarket_researcher`) dedicated to Google Search and 8-stage market research. |
+| `ScenarioAnalystAgentV6.java` | `src/main/java/com/google/adk/finance/v6/subagents/` | Macro scenario analyst (`scenario_analyst`) modeling bull/bear cases and stress-testing. |
+| `ReportWriterAgentV6.java` | `src/main/java/com/google/adk/finance/v6/subagents/` | Report synthesis specialist (`report_writer`) compiling executive decision-support documents. |
+| `FundamentalAnalysisAgentV6.java` | `src/main/java/com/google/adk/finance/v6/subagents/` | Financial statement specialist (`fundamental_analysis_agent`) analyzing multiples and balance sheets. |
+| `PortfolioRiskAgentV6.java` | `src/main/java/com/google/adk/finance/v6/subagents/` | Risk analyst (`portfolio_risk_agent`) computing beta, volatility, and concentration alerts. |
+| `FinanceConsoleV6.java` | `src/main/java/com/google/adk/finance/v6/` | Interactive CLI with sub-agent routing, real-time event logs, and status inspection. |
+| `FinanceV6IntegrationTest.java` | `src/test/java/com/google/adk/finance/v6/` | Test suite covering all 9 V6 integration tests: sub-agent creation, delegation, failure isolation, and synthesis. |
+
+---
+
+## 6. How to Run & Test Finance Advisor V6
+
+### 6.1 Interactive CLI Console
+Launch the interactive terminal:
 ```bash
+# Windows
+test-finance-v6.bat
+
+# Linux / macOS
+./test-finance-v6.sh
+```
+
+Within the console, use shortcut commands:
+- `agents`    : Displays all 5 registered specialist sub-agents and their descriptions.
+- `state`     : Inspects current customer portfolio session state.
+- `help`      : Displays sample multi-agent delegation questions.
+- `exit`      : Terminates the session cleanly.
+
+### 6.2 Executing Automated Tests
+Run the complete V6 integration test suite:
+```bash
+# Windows
+gradlew.bat test --tests com.google.adk.finance.v6.FinanceV6IntegrationTest
+
+# Linux / macOS
 ./gradlew test --tests com.google.adk.finance.v6.FinanceV6IntegrationTest
 ```

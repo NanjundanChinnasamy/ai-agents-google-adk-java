@@ -126,9 +126,26 @@ src/main/java/com/google/adk/finance/tools/
 
 ---
 
-## 4. Verification & Testing
+## 4. Key Files & Implementation Reference
 
-Launch interactive console:
+| File | Package Path | Role & Purpose |
+|---|---|---|
+| `FinanceAdvisorAgentV7.java` | `src/main/java/com/google/adk/finance/v7/` | Root orchestrator (`workflow_director`) routing inquiries to sequential, parallel, or critic loop workflows. |
+| `RunSequentialWorkflowTool.java` | `src/main/java/com/google/adk/finance/v7/tools/` | Tool triggering the 5-stage sequential investment research pipeline. |
+| `RunParallelWorkflowTool.java` | `src/main/java/com/google/adk/finance/v7/tools/` | Tool triggering concurrent multi-company fan-out/fan-in research. |
+| `RunCriticLoopWorkflowTool.java` | `src/main/java/com/google/adk/finance/v7/tools/` | Tool triggering the iterative author-critic compliance evaluation loop. |
+| `InvestmentResearchSequentialWorkflowV7.java` | `src/main/java/com/google/adk/finance/v7/workflows/sequential/` | Linear workflow using `SequentialAgent` passing state across 5 stages via `outputKey`. |
+| `PortfolioParallelResearchWorkflowV7.java` | `src/main/java/com/google/adk/finance/v7/workflows/parallel/` | Non-blocking parallel fan-out engine with partial failure resilience using `ParallelAgent`. |
+| `ResearchCriticLoopWorkflowV7.java` | `src/main/java/com/google/adk/finance/v7/workflows/loop/` | Iterative loop workflow using `LoopAgent` and `ExitLoopTool` with `maxIterations(3)`. |
+| `FinanceConsoleV7.java` | `src/main/java/com/google/adk/finance/v7/` | Dedicated interactive terminal for workflow execution tracing and trigger commands. |
+| `FinanceV7IntegrationTest.java` | `src/test/java/com/google/adk/finance/v7/` | Integration tests verifying sequential passing, parallel concurrency, and critic loop exit conditions. |
+
+---
+
+## 5. How to Run & Test Finance Advisor V7
+
+### 5.1 Interactive CLI Console
+Launch the interactive terminal:
 ```bash
 # Windows
 test-finance-v7.bat
@@ -137,7 +154,17 @@ test-finance-v7.bat
 ./test-finance-v7.sh
 ```
 
-Execute integration tests:
+Within the console, test each workflow topology:
+- **Sequential Pipeline**: `"Prepare a structured investment research report on Infosys."`
+- **Parallel Fan-Out**: `"Analyse Infosys, HDFC Bank and Reliance and give me a comparable research summary."`
+- **Critic Reflection Loop**: `"Create an investment research report on Infosys and ensure important factual claims are supported by evidence."`
+
+### 5.2 Executing Automated Tests
+Execute the integration test suite:
 ```bash
-gradlew test --tests com.google.adk.finance.v7.FinanceV7IntegrationTest
+# Windows
+gradlew.bat test --tests com.google.adk.finance.v7.FinanceV7IntegrationTest
+
+# Linux / macOS
+./gradlew test --tests com.google.adk.finance.v7.FinanceV7IntegrationTest
 ```

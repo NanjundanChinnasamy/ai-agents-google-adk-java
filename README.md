@@ -73,24 +73,29 @@ The application accommodates two complementary autonomous multi-agent systems sh
 - **AG-UI Protocol Engine**: Full Server-Sent Events (SSE) streaming bridging ADK `Flowable<Event>` to `@ag-ui/client` and CopilotKit.
 
 ### Domain 2: Finance Portfolio Decision-Support Agent
+- **Master Overview & Index**: See [`docs/finance-agent-intro.md`](docs/finance-agent-intro.md) for the complete architectural primer, learning sequence, and version sitemap.
 - **6-Week Versioned Curriculum**: Strict milestone progression from foundational agent (`v1`) to production cloud deployment (`prod`).
 - **Week 1 — Version 1 (`finance.v1`)**:
   - Foundational conversational financial analyst with domain instruction engineering (asset classes, valuation multiples, macro drivers, risk/return ratios).
   - `LlmAgent`, `AppConfig.createModel()`, `InMemoryRunner`, and session lifecycle management.
+  - **Reference Guide**: See comprehensive blueprint in [`docs/finance-agent-v1.md`](docs/finance-agent-v1.md).
 - **Week 1 — Version 2 (`finance.v2`)**:
   - **SQLite Relational Persistence**: Composite primary key `customer (customer_id, portfolio_id)` and `portfolio_holding` table with auto-seeding.
   - **Custom Tool Integration**: `LoadCustomerPortfolioTool` (in `com.google.adk.finance.tools`, aliased in `v2`) querying SQLite and injecting holdings into active session state via `toolContext.state()`.
   - **Dynamic Prompt Templating**: Embeds `{customer_id?}`, `{portfolio_id?}`, and `{portfolio_holdings?}` placeholders into agent instructions.
   - **Multi-Turn State Preservation**: Asks for Customer ID once, retrieves portfolio from SQLite, and retains state across turns to answer inquiries directly without re-querying.
   - **Regulatory Compliance Guardrail**: Automatically appends mandatory institutional disclaimers.
+  - **Reference Guide**: See comprehensive blueprint in [`docs/finance-agent-v2.md`](docs/finance-agent-v2.md).
 - **Week 2 — Version 3 (`finance.v3`)**:
   - **Google Search Grounding**: Live factual retrieval for recent company news, quarterly earnings, analyst consensus/targets, corporate disclosures, and macro catalysts.
   - **Deterministic Java Math Tool (`PortfolioMathTool`)**: (in `com.google.adk.finance.tools`, aliased in `v3`) Offloads arithmetic from LLM to Java for exact calculations: PnL, cost basis, return %, portfolio allocation weights, concentration risk flags (>25%), and technical indicators (SMA).
   - **Grounded Decision-Support Synthesis**: Merges real-time web evidence with exact mathematical metrics, concluding with mandatory regulatory disclaimers.
+  - **Reference Guide**: See comprehensive blueprint in [`docs/finance-agent-v3.md`](docs/finance-agent-v3.md).
 - **Week 2 — Version 4 (`finance.v4`)**:
   - **Dynamic Domain Skills (`SkillToolset` & `LocalSkillSource`)**: Modular on-demand domain capability skills (`skills/finance/`): `finance-fundamentals`, `fundamental-analysis`, `valuation`, `risk-management`, `portfolio-analysis`, and `market-research`.
   - **Curated Grounding Knowledge (`knowledge/`)**: Project-level domain frameworks (`glossary.md`, `valuation-principles.md`, `fundamental-analysis.md`, `risk-framework.md`, `portfolio-principles.md`, `market-research-framework.md`) accessed via `ProjectKnowledgeTool` (in `com.google.adk.finance.tools`, aliased in `v4`).
   - **Three-Tier Knowledge Hierarchy & Grounding Transparency**: Explicitly distinguishes *Project Knowledge* (curated frameworks), *Current Information* (live Google Search via `stockmarket_researcher`), and *Analysis & Interpretation* (model reasoning) concluded with mandatory regulatory disclaimers.
+  - **Reference Guide**: See comprehensive blueprint in [`docs/finance-agent-v4.md`](docs/finance-agent-v4.md).
 - **Week 3 — Version 5 (`finance.v5`)**:
   - **Model Context Protocol (MCP) Integration**: Consumes live structured market tools exposed by the standalone Java Yahoo Finance MCP server via Google ADK Java's `McpToolset` over STDIO transport.
   - **Dynamic Tool Discovery**: Automatically launches `mcp/yahoo-finance-mcp.jar`, verifies readiness with timeout, and discovers 4 structured tools: `get_stock_info`, `get_stock_actions`, `get_financial_statement`, `get_recommendations`.
@@ -135,7 +140,8 @@ The application accommodates two complementary autonomous multi-agent systems sh
        - `ComplianceDisclaimerGuard`: Automatically inspects and injects mandatory institutional non-advice disclaimers.
     5. **Sub-Agents & Tools**:
        - `GuardedMarketResearchAgentV8`: Isolated search sub-agent (`GoogleSearchTool.INSTANCE`) protected by V8 guardrail callbacks.
-       - `MockTradingAgentV8`: Prohibited transactional tool harness verifying that `execute_trade` is strictly blocked by `Befo   - **Reference Guide**: See [`docs/finance-agent-v8.md`](docs/finance-agent-v8.md), [`v8/README.md`](v8/README.md), and [`v8/guardrails/README.md`](v8/guardrails/README.md).
+       - `MockTradingAgentV8`: Prohibited transactional tool harness verifying that `execute_trade` is strictly blocked by `BeforeToolGuardrail`.
+  - **Reference Guide**: See [`docs/finance-agent-v8.md`](docs/finance-agent-v8.md) and [`v8/README.md`](v8/README.md).
 - **Week 5 — Version 9 (`finance.v9`)**:
   - **Evaluation & Failure Testing Harness**: Answers *"How do I know my Finance Advisor is producing trustworthy results?"*
   - **Deterministic Evaluators**:
@@ -146,7 +152,7 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Adversarial Failure Testing (`FailureScenarioRunner`)**: Simulates PII injection, prompt overrides, invalid tickers, unauthorized operations, and MCP tool outages to verify graceful degradation without hallucination.
   - **Golden Benchmark Dataset**: Versioned golden test cases (`finance-evaluation-cases.json`, `failure-test-cases.json`) with intentional failure detection.
   - **V8 Guardrail Regression**: Automated test suite proving perimeter safety defenses remain intact.
-  - **Reference Guide**: See [`v9/README.md`](v9/README.md) and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
+  - **Reference Guide**: See [`docs/finance-agent-v9.md`](docs/finance-agent-v9.md), [`v9/README.md`](v9/README.md), and [`v9/docs/finance-agent-v9-evaluation.md`](v9/docs/finance-agent-v9-evaluation.md).
 - **Week 5 — Version 10 (`finance.v10`)**:
   - **Observability, Tracing, and Persistence**: Answers *"Can I see what my agent did, understand why it did it, measure its execution, and retrieve the execution later?"*
   - **Structured Telemetry Events**: Strongly-typed Java records (`ExecutionEvent`, `EventType`) tracking full cognitive lifecycle: agent started/completed, model calls (with `UNKNOWN` token safety), tool calls (Yahoo Finance MCP, Google Search, deterministic math, SQLite DB), guardrail interventions, evaluation results, and error isolation.
@@ -155,7 +161,7 @@ The application accommodates two complementary autonomous multi-agent systems sh
   - **Dual Persistence Abstraction**: `ExecutionRepository` supporting isolated JSON file persistence (`v10/data/executions/{executionId}.json`) and embedded SQLite WAL persistence (`agent_execution_v10` in `finance_portfolio.db`).
   - **Grounded Latency & Tool Accounting**: Precise millisecond measurements across components without fabricating synthetic metrics.
   - **Interactive Diagnostics Console**: CLI commands for `ask`, `trace`, `history`, `failed`, `guardrails`, `eval-failures`, `eval`, `eval-all`, and `inspect`.
-  - **Reference Guide**: See [`v10/README.md`](v10/README.md) and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
+  - **Reference Guide**: See [`docs/finance-agent-v10.md`](docs/finance-agent-v10.md), [`v10/README.md`](v10/README.md), and [`v10/docs/finance-agent-v10-observability.md`](v10/docs/finance-agent-v10-observability.md).
 - **Week 5+ — Version 11 (`finance.v11`)**:
   - **Rules-Driven and Hook-Aware Agent**: Establishes the clear architectural distinction between declarative behavioural guidance (**RULES**) and programmatic interception points (**HOOKS**).
   - **Modular Rules Catalog (`v11/rules/`)**: 5 persistent Markdown rules files loaded dynamically via `RuleLoader`:
@@ -172,7 +178,8 @@ The application accommodates two complementary autonomous multi-agent systems sh
     4. `PreAgentRuleEnforcementHook` (`BeforeAgentCallbackSync`, **NON-BLOCKING**): Verifies active rules presence in session state and initializes rule tracking metadata.
   - **Sequential Research Workflow with Stage Hooks**: `SequentialResearchWorkflowV11` with `WorkflowStageHook` capturing start, completion, and error states across pipeline stages.
   - **Interactive Terminal Console**: Dedicated CLI runner supporting `/rules`, `/rule <name>`, `/scoped`, `/hooks`, `/test-blocking`, `/test-nonblocking`, `/workflow <ticker>`, and `/scenario <ticker>`.
-  - **Reference Guide**: See [`v11/README.md`](v11/README.md).
+  - **Reference Guide**: See [`docs/finance-agent-v11.md`](docs/finance-agent-v11.md) and [`v11/README.md`](v11/README.md).
+
 
 ---
 
@@ -200,10 +207,18 @@ ai-agents-google-adk-java/
 ├── test-finance-v11.bat / .sh # Dedicated CLI runner for Finance Advisor v11 (Rules Files & Lifecycle Hooks)
 ├── .env.example               # Environment variables template
 ├── docs/                      # Technical documentation and milestone references
-│   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP
+│   ├── finance-agent-intro.md # Master Index & Comprehensive Architectural Reference
+│   ├── finance-agent-v1.md    # Architecture and implementation guide for V1 Baseline Agent
+│   ├── finance-agent-v2.md    # Architecture and implementation guide for V2 Relational State
+│   ├── finance-agent-v3.md    # Architecture and implementation guide for V3 Math & Search
+│   ├── finance-agent-v4.md    # Architecture and implementation guide for V4 Skills & Knowledge
+│   ├── finance-agent-v5.md    # Architecture and implementation guide for V5 MCP Integration
 │   ├── finance-agent-v6.md    # Architecture and implementation guide for V6 Sub-Agents
 │   ├── finance-agent-v7.md    # Architecture and implementation guide for V7 Workflows
-│   └── finance-agent-v8.md    # Architecture and implementation guide for V8 Guardrails
+│   ├── finance-agent-v8.md    # Architecture and implementation guide for V8 Guardrails
+│   ├── finance-agent-v9.md    # Architecture and implementation guide for V9 Evaluation
+│   ├── finance-agent-v10.md   # Architecture and implementation guide for V10 Tracing & Observability
+│   └── finance-agent-v11.md   # Architecture and implementation guide for V11 Rules & Hooks
 ├── v6/                        # Milestone V6 documentation and architectural references
 │   ├── README.md              # V6 overview & evolutionary comparison
 │   └── sub-agents/            # Specialized sub-agent architectural specifications
@@ -944,7 +959,7 @@ Run the fully guarded financial advisor demonstrating deterministic input, tool,
 - **Tool Authorization & Ticker Validation**: Enforces strict read-only analytical scope, categorically blocking `execute_trade` and invalid/injected ticker formats.
 - **Fact-Auditing & Hallucination Flagging**: `EvidenceStore` records actual tool outputs, and `HallucinationDetector` audits LLM numerical claims against empirical observations.
 - **Mandatory Compliance Disclaimer**: Non-advice disclaimer appended to all model responses.
-- **Documentation**: See [`v8/README.md`](v8/README.md), [`v8/guardrails/README.md`](v8/guardrails/README.md), and [`v8/callbacks/README.md`](v8/callbacks/README.md).
+- **Documentation**: See [`v8/README.md`](v8/README.md), [`v8/guardrails/`](v8/guardrails/), and [`v8/callbacks/`](v8/callbacks/).
 
 #### Week 5 — Version 9: Evaluation & Failure Testing (`finance.v9`)
 Run the Finance Advisor V9 interactive evaluation and failure testing console:

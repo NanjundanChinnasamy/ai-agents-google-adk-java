@@ -237,3 +237,50 @@ To maintain clean architectural boundaries and isolate the MCP learning mileston
 8. **Multi-Source Intelligence Triangulation**: Grounded decisions require combining structured data (MCP), current events (Search), domain expertise (Skills), and institutional principles (Knowledge).
 9. **Process Lifecycle Management**: Automated subprocess startup must always be paired with readiness verification and JVM shutdown hooks to guarantee that child processes are never orphaned.
 10. **Graceful Degradation**: If an external data source or MCP server is unreachable, the agent must fail with clear, actionable diagnostics rather than silent errors.
+
+---
+
+## 11. Key Files & Implementation Reference
+
+| File | Package Path | Role & Purpose |
+|---|---|---|
+| `YahooFinanceMcpServer.java` | `src/main/java/com/google/adk/mcp/yahoofinance/` | Standalone Java MCP server over STDIO transport registering market data tools. |
+| `YahooFinanceService.java` | `src/main/java/com/google/adk/mcp/yahoofinance/` | Service fetching and formatting quotes, dividends, statements, and analyst targets. |
+| `YahooFinanceApiClient.java` | `src/main/java/com/google/adk/mcp/yahoofinance/` | HTTP client with automatic cookie and crumb management. |
+| `YahooFinanceMcpClientManager.java` | `src/main/java/com/google/adk/finance/v5/` | Client manager spawning the MCP server subprocess, verifying readiness, discovering tools, and managing graceful shutdown. |
+| `FinanceAdvisorAgentV5Factory.java` | `src/main/java/com/google/adk/finance/v5/` | Root factory creating `finance_advisor_v5` with dynamic MCP tools, search, math, DB, skills, and knowledge. |
+| `FinanceConsoleV5.java` | `src/main/java/com/google/adk/finance/v5/` | Interactive CLI terminal supporting MCP tool inspection, dynamic queries, and JVM shutdown hooks. |
+| `FinanceV5IntegrationTest.java` | `src/test/java/com/google/adk/finance/v5/` | Comprehensive test suite verifying subprocess lifecycle, tool discovery, multi-turn state preservation, and multi-source triangulation. |
+
+---
+
+## 12. How to Run & Test Finance Advisor V5
+
+### 12.1 Interactive CLI Console
+Launch the interactive terminal:
+```bash
+# Windows
+test-finance-v5.bat
+
+# Linux / macOS
+./test-finance-v5.sh
+```
+
+Within the console, use shortcut commands:
+- `mcp`       : Lists discovered MCP tools and verifies server connection status.
+- `tools`     : Displays all registered tools (MCP, search, math, DB).
+- `skills`    : Lists all domain skills in `skills/finance/`.
+- `knowledge` : Lists curated grounding documents in `knowledge/`.
+- `state`     : Inspects current customer portfolio session state.
+- `help`      : Displays sample market, fundamental, and scenario queries.
+- `exit`      : Shuts down the MCP server subprocess and terminates cleanly.
+
+### 12.2 Executing Automated Tests
+Run the complete V5 integration test suite:
+```bash
+# Windows
+gradlew.bat test --tests com.google.adk.finance.v5.FinanceV5IntegrationTest
+
+# Linux / macOS
+./gradlew test --tests com.google.adk.finance.v5.FinanceV5IntegrationTest
+```
